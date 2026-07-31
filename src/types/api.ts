@@ -57,6 +57,8 @@ export interface Treatment {
   frequency: string | null;
   startDate: string | null;
   endDate: string | null;
+  /** Heures de prise separees par des virgules, ex: "08:00,13:00,20:00". */
+  reminderTimes: string | null;
   notes: string | null;
 }
 
@@ -85,6 +87,7 @@ export interface HealthEntry {
   type: HealthEntryType;
   customTypeLabel: string | null;
   scheduledDate: string;
+  scheduledTime: string | null;
   status: HealthEntryStatus;
   report: string | null;
   price: number | null;

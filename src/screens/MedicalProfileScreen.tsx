@@ -10,6 +10,7 @@ import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
 import DatePickerInput from '../components/DatePickerInput';
+import { scheduleTreatmentReminders, cancelTreatmentReminders } from '../notifications/localReminders';
 import { getProceduresForSpecies } from '../data/procedures';
 import { TREATMENT_TYPES } from '../data/treatmentTypes';
 import { getChronicConditionsForSpecies } from '../data/medicalConditions';
@@ -20,6 +21,20 @@ import { INSURANCE_PROVIDERS } from '../data/insuranceProviders';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MedicalProfile'>;
+
+const REMINDER_PRESETS = [
+  { key: 'matin', label: 'Matin', time: '08:00' },
+  { key: 'midi', label: 'Midi', time: '12:00' },
+  { key: 'soir', label: 'Soir', time: '20:00' },
+] as const;
+
+function todayIsoDate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 const FIELDS: { key: keyof MedicalProfile; label: string; options?: (species: string) => readonly string[] }[] = [
   { key: 'chronicConditions', label: 'Maladies chroniques', options: getChronicConditionsForSpecies },
@@ -41,6 +56,9 @@ export default function MedicalProfileScreen({ route }: Props) {
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [treatmentName, setTreatmentName] = useState('');
   const [treatmentDosage, setTreatmentDosage] = useState('');
+  const [reminderPresets, setReminderPresets] = useState<Set<string>>(new Set());
+  const [reminderStartDate, setReminderStartDate] = useState(todayIsoDate());
+  const [reminderDurationDays, setReminderDurationDays] = useState('');
   const [treatmentModalVisible, setTreatmentModalVisible] = useState(false);
 
   const [surgicalHistory, setSurgicalHistory] = useState<SurgicalHistoryEntry[]>([]);
@@ -72,10 +90,32 @@ export default function MedicalProfileScreen({ route }: Props) {
 
   const onAddTreatment = async () => {
     if (!treatmentName.trim()) return;
+    const times = REMINDER_PRESETS.filter((p) => reminderPresets.has(p.key)).map((p) => p.time);
+    const durationDays = parseInt(reminderDurationDays, 10) || 0;
     try {
-      await api.createTreatment(animalId, { name: treatmentName.trim(), dosage: treatmentDosage || null });
+      const treatment = await api.createTreatment(animalId, {
+        name: treatmentName.trim(),
+        dosage: treatmentDosage || null,
+        startDate: times.length > 0 ? reminderStartDate : undefined,
+        reminderTimes: times.length > 0 ? times.join(',') : null,
+      });
+      if (times.length > 0 && durationDays > 0) {
+        await scheduleTreatmentReminders({
+          animalId,
+          animalName,
+          treatmentId: treatment.id,
+          treatmentName: treatment.name,
+          dosage: treatment.dosage,
+          startDate: reminderStartDate,
+          durationDays,
+          times,
+        });
+      }
       setTreatmentName('');
       setTreatmentDosage('');
+      setReminderPresets(new Set());
+      setReminderStartDate(todayIsoDate());
+      setReminderDurationDays('');
       setTreatmentModalVisible(false);
       api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
     } catch (error) {
@@ -92,6 +132,7 @@ export default function MedicalProfileScreen({ route }: Props) {
         onPress: async () => {
           try {
             await api.deleteTreatment(animalId, treatment.id);
+            await cancelTreatmentReminders(treatment.id);
             api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
           } catch (error) {
             showError(error);
@@ -99,6 +140,18 @@ export default function MedicalProfileScreen({ route }: Props) {
         },
       },
     ]);
+  };
+
+  const toggleReminderPreset = (key: string) => {
+    setReminderPresets((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
   };
 
   const onAddSurgicalHistory = async () => {
@@ -168,6 +221,7 @@ export default function MedicalProfileScreen({ route }: Props) {
             <View key={t.id} style={styles.listCard}>
               <Text style={styles.listCardTitle}>{t.name}</Text>
               {t.dosage && <Text style={styles.listCardSubtitle}>{t.dosage}</Text>}
+              {t.reminderTimes && <Text style={styles.listCardSubtitle}>Rappels : {t.reminderTimes}</Text>}
               <TouchableOpacity onPress={() => onDeleteTreatment(t)}>
                 <Text style={styles.deleteLink}>Supprimer</Text>
               </TouchableOpacity>
@@ -210,6 +264,36 @@ export default function MedicalProfileScreen({ route }: Props) {
           value={treatmentDosage}
           onChangeText={setTreatmentDosage}
         />
+
+        <Text style={styles.label}>Rappels de prise (optionnel)</Text>
+        <View style={styles.chipRow}>
+          {REMINDER_PRESETS.map((preset) => (
+            <TouchableOpacity
+              key={preset.key}
+              style={[styles.chip, reminderPresets.has(preset.key) && styles.chipActive]}
+              onPress={() => toggleReminderPreset(preset.key)}
+            >
+              <Text style={reminderPresets.has(preset.key) ? styles.chipTextActive : styles.chipText}>
+                {preset.label} ({preset.time})
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {reminderPresets.size > 0 && (
+          <>
+            <Text style={styles.label}>Debut des rappels</Text>
+            <DatePickerInput value={reminderStartDate} onChange={setReminderStartDate} />
+            <Text style={styles.label}>Pendant combien de jours</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: 7"
+              keyboardType="number-pad"
+              value={reminderDurationDays}
+              onChangeText={setReminderDurationDays}
+            />
+          </>
+        )}
+
         <TouchableOpacity style={styles.addButton} onPress={onAddTreatment}>
           <Text style={styles.addButtonText}>Ajouter</Text>
         </TouchableOpacity>
@@ -259,4 +343,9 @@ const styles = StyleSheet.create({
   empty: { color: '#666' },
   addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
+  chipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
+  chipText: { color: '#333' },
+  chipTextActive: { color: 'white', fontWeight: '600' },
 });

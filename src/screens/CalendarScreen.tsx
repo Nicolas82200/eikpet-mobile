@@ -9,10 +9,13 @@ import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
 import DatePickerInput from '../components/DatePickerInput';
+import TimePickerInput from '../components/TimePickerInput';
 import RecurrencePicker from '../components/RecurrencePicker';
 import { getVaccinesForSpecies } from '../data/vaccines';
 import { getDewormersForSpecies } from '../data/dewormers';
+import { scheduleAppointmentFollowUp } from '../notifications/localReminders';
 import { showError, showLoadError } from '../utils/errorHandling';
+import { formatTime } from '../utils/formatting';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Calendar'>;
 
@@ -35,6 +38,7 @@ export default function CalendarScreen({ route }: Props) {
   const [type, setType] = useState<HealthEntryType>('vaccin');
   const [customTypeLabel, setCustomTypeLabel] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
   const [recurrenceMonths, setRecurrenceMonths] = useState<number | null>(null);
 
   const load = useCallback(() => {
@@ -52,16 +56,28 @@ export default function CalendarScreen({ route }: Props) {
   };
 
   const onCreate = async () => {
-    if (!selectedAnimalId || !scheduledDate) return;
+    if (!selectedAnimalId || !scheduledDate || !selectedAnimal) return;
     try {
-      await api.createHealthEntry(selectedAnimalId, {
+      const entry = await api.createHealthEntry(selectedAnimalId, {
         type,
         scheduledDate,
+        scheduledTime: scheduledTime || undefined,
         customTypeLabel: customTypeLabel.trim() || undefined,
         recurrenceMonths: recurrenceMonths ?? undefined,
       });
+      if (scheduledTime) {
+        await scheduleAppointmentFollowUp({
+          animalId: selectedAnimalId,
+          animalName: selectedAnimal.name,
+          entryId: entry.id,
+          entryLabel: customTypeLabel.trim() || type,
+          scheduledDate,
+          scheduledTime,
+        });
+      }
       setCustomTypeLabel('');
       setScheduledDate('');
+      setScheduledTime('');
       setRecurrenceMonths(null);
       setModalVisible(false);
       load();
@@ -89,7 +105,9 @@ export default function CalendarScreen({ route }: Props) {
               {item.animalName} — {item.customTypeLabel ?? item.type}
             </Text>
             <Text style={styles.cardSubtitle}>
-              {item.nextReminderDate ? `Rappel le ${item.nextReminderDate}` : `Prevu le ${item.scheduledDate}`}
+              {item.nextReminderDate
+                ? `Rappel le ${item.nextReminderDate}`
+                : `Prevu le ${item.scheduledDate}${item.scheduledTime ? ` a ${formatTime(item.scheduledTime)}` : ''}`}
             </Text>
           </View>
         )}
@@ -134,6 +152,7 @@ export default function CalendarScreen({ route }: Props) {
               placeholder={type === 'vaccin' ? 'Nom du vaccin (optionnel)' : 'Precision (optionnel)'}
             />
             <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
+            <TimePickerInput value={scheduledTime} onChange={setScheduledTime} placeholder="Heure (optionnel)" />
             <RecurrencePicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
             <TouchableOpacity style={styles.addButton} onPress={onCreate}>
               <Text style={styles.addButtonText}>Ajouter</Text>

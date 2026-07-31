@@ -9,10 +9,13 @@ import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
 import DatePickerInput from '../components/DatePickerInput';
+import TimePickerInput from '../components/TimePickerInput';
 import RecurrencePicker from '../components/RecurrencePicker';
 import { getVaccinesForSpecies } from '../data/vaccines';
 import { getDewormersForSpecies } from '../data/dewormers';
+import { scheduleAppointmentFollowUp, cancelAppointmentFollowUp } from '../notifications/localReminders';
 import { showError, showLoadError } from '../utils/errorHandling';
+import { formatTime } from '../utils/formatting';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
 
@@ -30,6 +33,7 @@ export default function HealthEntriesScreen({ route }: Props) {
   const [type, setType] = useState<HealthEntryType>('vaccin');
   const [customTypeLabel, setCustomTypeLabel] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
   const [recurrenceMonths, setRecurrenceMonths] = useState<number | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -42,14 +46,26 @@ export default function HealthEntriesScreen({ route }: Props) {
   const onCreate = async () => {
     if (!scheduledDate) return;
     try {
-      await api.createHealthEntry(animalId, {
+      const entry = await api.createHealthEntry(animalId, {
         type,
         scheduledDate,
+        scheduledTime: scheduledTime || undefined,
         customTypeLabel: customTypeLabel.trim() || undefined,
         recurrenceMonths: recurrenceMonths ?? undefined,
       });
+      if (scheduledTime) {
+        await scheduleAppointmentFollowUp({
+          animalId,
+          animalName,
+          entryId: entry.id,
+          entryLabel: customTypeLabel.trim() || type,
+          scheduledDate,
+          scheduledTime,
+        });
+      }
       setCustomTypeLabel('');
       setScheduledDate('');
+      setScheduledTime('');
       setRecurrenceMonths(null);
       setModalVisible(false);
       load();
@@ -76,6 +92,7 @@ export default function HealthEntriesScreen({ route }: Props) {
         onPress: async () => {
           try {
             await api.deleteHealthEntry(animalId, entry.id);
+            await cancelAppointmentFollowUp(entry.id);
             load();
           } catch (error) {
             showError(error);
@@ -102,7 +119,9 @@ export default function HealthEntriesScreen({ route }: Props) {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{item.customTypeLabel ?? item.type}</Text>
             <Text style={styles.cardSubtitle}>
-              {item.scheduledDate} — {item.status === 'fait' ? 'Fait' : 'Prevu'}
+              {item.scheduledDate}
+              {item.scheduledTime ? ` a ${formatTime(item.scheduledTime)}` : ''} —{' '}
+              {item.status === 'fait' ? 'Fait' : 'Prevu'}
             </Text>
             {item.nextReminderDate && <Text style={styles.cardSubtitle}>Prochain rappel : {item.nextReminderDate}</Text>}
             <View style={styles.cardActions}>
@@ -140,6 +159,7 @@ export default function HealthEntriesScreen({ route }: Props) {
           autoFocus
         />
         <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
+        <TimePickerInput value={scheduledTime} onChange={setScheduledTime} placeholder="Heure (optionnel)" />
         <RecurrencePicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
         <TouchableOpacity style={styles.addButton} onPress={onCreate}>
           <Text style={styles.addButtonText}>Ajouter</Text>

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { createNativeStackNavigator, type NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Notifications from 'expo-notifications';
 import { useAuth } from '../auth/AuthContext';
 import { registerForPushNotifications } from '../notifications/registerForPushNotifications';
 import type { AppStackParamList, AuthStackParamList } from './types';
@@ -14,6 +15,7 @@ import MedicalProfileScreen from '../screens/MedicalProfileScreen';
 import HealthEntriesScreen from '../screens/HealthEntriesScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import DocumentsScreen from '../screens/DocumentsScreen';
+import AppointmentFollowUpScreen from '../screens/AppointmentFollowUpScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -27,10 +29,33 @@ function AuthNavigator() {
   );
 }
 
+function handleNotificationResponse(
+  response: Notifications.NotificationResponse,
+  navigation: NativeStackNavigationProp<AppStackParamList>,
+) {
+  const data = response.notification.request.content.data;
+  if (data?.kind === 'appointment-followup' && typeof data.animalId === 'number' && typeof data.entryId === 'number') {
+    navigation.navigate('AppointmentFollowUp', { animalId: data.animalId, entryId: data.entryId });
+  }
+}
+
 function AppNavigator() {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+
   useEffect(() => {
     registerForPushNotifications().catch(() => undefined);
-  }, []);
+
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        handleNotificationResponse(response, navigation);
+      }
+    });
+
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) =>
+      handleNotificationResponse(response, navigation),
+    );
+    return () => subscription.remove();
+  }, [navigation]);
 
   return (
     <AppStack.Navigator>
@@ -45,6 +70,11 @@ function AppNavigator() {
       <AppStack.Screen name="HealthEntries" component={HealthEntriesScreen} options={{ title: 'Carnet de sante' }} />
       <AppStack.Screen name="Calendar" component={CalendarScreen} options={{ title: 'Calendrier' }} />
       <AppStack.Screen name="Documents" component={DocumentsScreen} options={{ title: 'Documents' }} />
+      <AppStack.Screen
+        name="AppointmentFollowUp"
+        component={AppointmentFollowUpScreen}
+        options={{ title: 'Suivi du rendez-vous' }}
+      />
     </AppStack.Navigator>
   );
 }
