@@ -5,7 +5,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { HealthEntry, HealthEntryType } from '../types/api';
-import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
+import AddIconButton from '../components/AddIconButton';
+import AddModal from '../components/AddModal';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
 
@@ -16,6 +17,7 @@ export default function HealthEntriesScreen({ route }: Props) {
   const [entries, setEntries] = useState<HealthEntry[]>([]);
   const [type, setType] = useState<HealthEntryType>('vaccin');
   const [scheduledDate, setScheduledDate] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
   const load = useCallback(() => {
     api.listHealthEntries(animalId).then(setEntries).catch(() => undefined);
@@ -27,6 +29,7 @@ export default function HealthEntriesScreen({ route }: Props) {
     if (!scheduledDate) return;
     await api.createHealthEntry(animalId, { type, scheduledDate });
     setScheduledDate('');
+    setModalVisible(false);
     load();
   };
 
@@ -50,42 +53,17 @@ export default function HealthEntriesScreen({ route }: Props) {
   };
 
   return (
-    <KeyboardAvoidingScreen>
+    <>
       <FlatList
         style={styles.container}
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
         data={entries}
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={
-          <>
+          <View style={styles.titleRow}>
             <Text style={styles.title}>Carnet de sante — {animalName}</Text>
-            <View style={styles.form}>
-              <Text style={styles.formTitle}>Ajouter une entree</Text>
-              <View style={styles.typeRow}>
-                {TYPES.map((t) => (
-                  <TouchableOpacity
-                    key={t}
-                    style={[styles.typeChip, t === type && styles.typeChipActive]}
-                    onPress={() => setType(t)}
-                  >
-                    <Text style={t === type ? styles.typeChipTextActive : styles.typeChipText}>{t}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <View style={styles.newEntryRow}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Date (AAAA-MM-JJ)"
-                  value={scheduledDate}
-                  onChangeText={setScheduledDate}
-                />
-                <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-                  <Text style={styles.addButtonText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </>
+            <AddIconButton onPress={() => setModalVisible(true)} />
+          </View>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -108,16 +86,39 @@ export default function HealthEntriesScreen({ route }: Props) {
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l'instant</Text>}
       />
-    </KeyboardAvoidingScreen>
+
+      <AddModal visible={modalVisible} title="Ajouter une entree" onClose={() => setModalVisible(false)}>
+        <View style={styles.typeRow}>
+          {TYPES.map((t) => (
+            <TouchableOpacity
+              key={t}
+              style={[styles.typeChip, t === type && styles.typeChipActive]}
+              onPress={() => setType(t)}
+            >
+              <Text style={t === type ? styles.typeChipTextActive : styles.typeChipText}>{t}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Date (AAAA-MM-JJ)"
+          value={scheduledDate}
+          onChangeText={setScheduledDate}
+          autoFocus
+        />
+        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
+          <Text style={styles.addButtonText}>Ajouter</Text>
+        </TouchableOpacity>
+      </AddModal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  form: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 20, gap: 10 },
-  formTitle: { fontSize: 16, fontWeight: '600' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', flexShrink: 1, marginRight: 12 },
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '600', textTransform: 'capitalize' },
   cardSubtitle: { color: '#666', marginTop: 4 },
@@ -125,13 +126,12 @@ const styles = StyleSheet.create({
   cardActionText: { color: '#2f6f4f', fontWeight: '600' },
   cardActionTextDanger: { color: '#a33', fontWeight: '600' },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   typeChip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
   typeChipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
   typeChipText: { color: '#333' },
   typeChipTextActive: { color: 'white' },
-  newEntryRow: { flexDirection: 'row', gap: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, paddingHorizontal: 20, justifyContent: 'center' },
-  addButtonText: { color: 'white', fontSize: 20, fontWeight: 'bold' },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
+  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },
+  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });
