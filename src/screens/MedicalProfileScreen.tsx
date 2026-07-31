@@ -9,6 +9,7 @@ import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
+import DatePickerInput from '../components/DatePickerInput';
 import { getProceduresForSpecies } from '../data/procedures';
 import { TREATMENT_TYPES } from '../data/treatmentTypes';
 import { getChronicConditionsForSpecies } from '../data/medicalConditions';
@@ -226,12 +227,7 @@ export default function MedicalProfileScreen({ route }: Props) {
           placeholder="Operation"
           autoFocus
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Date (AAAA-MM-JJ)"
-          value={performedOn}
-          onChangeText={setPerformedOn}
-        />
+        <DatePickerInput value={performedOn} onChange={setPerformedOn} placeholder="Date de l'operation" />
         <TouchableOpacity style={styles.addButton} onPress={onAddSurgicalHistory}>
           <Text style={styles.addButtonText}>Ajouter</Text>
         </TouchableOpacity>

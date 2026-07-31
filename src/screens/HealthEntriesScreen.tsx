@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -8,6 +8,7 @@ import type { HealthEntry, HealthEntryType } from '../types/api';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
+import DatePickerInput from '../components/DatePickerInput';
 import { getVaccinesForSpecies } from '../data/vaccines';
 import { getDewormersForSpecies } from '../data/dewormers';
 import { showError, showLoadError } from '../utils/errorHandling';
@@ -134,12 +135,7 @@ export default function HealthEntriesScreen({ route }: Props) {
           placeholder={type === 'vaccin' ? 'Nom du vaccin (optionnel)' : 'Precision (optionnel)'}
           autoFocus
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Date (AAAA-MM-JJ)"
-          value={scheduledDate}
-          onChangeText={setScheduledDate}
-        />
+        <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
         <TouchableOpacity style={styles.addButton} onPress={onCreate}>
           <Text style={styles.addButtonText}>Ajouter</Text>
         </TouchableOpacity>

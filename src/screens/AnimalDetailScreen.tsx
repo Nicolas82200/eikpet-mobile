@@ -7,6 +7,7 @@ import * as api from '../api/endpoints';
 import type { Animal, AnimalSex } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AutocompleteInput from '../components/AutocompleteInput';
+import DatePickerInput from '../components/DatePickerInput';
 import { getBreedsForSpecies } from '../data/breeds';
 import { getColorsForSpecies } from '../data/colors';
 import { showError, showLoadError } from '../utils/errorHandling';
@@ -119,11 +120,10 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
             ))}
           </View>
 
-          <Text style={styles.label}>Date de naissance (AAAA-MM-JJ)</Text>
-          <TextInput
-            style={styles.input}
+          <Text style={styles.label}>Date de naissance</Text>
+          <DatePickerInput
             value={form.birthDate?.slice(0, 10) ?? ''}
-            onChangeText={(v) => setForm((f) => ({ ...f, birthDate: v }))}
+            onChange={(v) => setForm((f) => ({ ...f, birthDate: v }))}
           />
 
           <View style={styles.switchRow}>
