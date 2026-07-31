@@ -91,6 +91,7 @@ export default function HouseholdsScreen({ navigation }: Props) {
                   householdId: item.id,
                   householdName: item.name,
                   inviteCode: item.inviteCode,
+                  isOwner: item.role === 'owner',
                 })
               }
             >

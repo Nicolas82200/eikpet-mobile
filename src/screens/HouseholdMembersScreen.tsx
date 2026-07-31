@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -12,10 +12,13 @@ import { showError, showLoadError } from '../utils/errorHandling';
 type Props = NativeStackScreenProps<AppStackParamList, 'HouseholdMembers'>;
 
 export default function HouseholdMembersScreen({ route, navigation }: Props) {
-  const { householdId, householdName } = route.params;
+  const { householdId, isOwner } = route.params;
+  const [householdName, setHouseholdName] = useState(route.params.householdName);
+  const [nameDraft, setNameDraft] = useState(route.params.householdName);
   const [inviteCode, setInviteCode] = useState(route.params.inviteCode);
   const [members, setMembers] = useState<HouseholdMember[]>([]);
   const [regenerating, setRegenerating] = useState(false);
+  const [renaming, setRenaming] = useState(false);
 
   const load = useCallback(() => {
     return api.listHouseholdMembers(householdId).then(setMembers).catch(showLoadError);
@@ -55,6 +58,21 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
     );
   };
 
+  const onRename = async () => {
+    if (!nameDraft.trim() || nameDraft.trim() === householdName) return;
+    setRenaming(true);
+    try {
+      const updated = await api.renameHousehold(householdId, nameDraft.trim());
+      setHouseholdName(updated.name);
+      navigation.setParams({ householdName: updated.name });
+      navigation.setOptions({ title: updated.name });
+    } catch (error) {
+      showError(error);
+    } finally {
+      setRenaming(false);
+    }
+  };
+
   return (
     <FlatList
       style={styles.container}
@@ -64,7 +82,20 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ListHeaderComponent={
         <>
-          <Text style={styles.title}>{householdName}</Text>
+          {isOwner ? (
+            <View style={styles.renameRow}>
+              <TextInput style={styles.nameInput} value={nameDraft} onChangeText={setNameDraft} />
+              <TouchableOpacity
+                style={styles.renameButton}
+                onPress={onRename}
+                disabled={renaming || !nameDraft.trim() || nameDraft.trim() === householdName}
+              >
+                <Text style={styles.renameButtonText}>{renaming ? '...' : 'Renommer'}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Text style={styles.title}>{householdName}</Text>
+          )}
 
           <View style={styles.codeCard}>
             <Text style={styles.codeLabel}>Code d'invitation</Text>
@@ -76,11 +107,13 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
               <TouchableOpacity style={styles.codeButton} onPress={onCopyCode}>
                 <Text style={styles.codeButtonText}>Copier</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.codeButtonSecondary} onPress={onRegenerate} disabled={regenerating}>
-                <Text style={styles.codeButtonSecondaryText}>
-                  {regenerating ? 'Regeneration...' : 'Regenerer'}
-                </Text>
-              </TouchableOpacity>
+              {isOwner && (
+                <TouchableOpacity style={styles.codeButtonSecondary} onPress={onRegenerate} disabled={regenerating}>
+                  <Text style={styles.codeButtonSecondaryText}>
+                    {regenerating ? 'Regeneration...' : 'Regenerer'}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -106,6 +139,18 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
+  renameRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  nameInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  renameButton: { backgroundColor: '#2f6f4f', borderRadius: 8, paddingHorizontal: 16, justifyContent: 'center' },
+  renameButtonText: { color: 'white', fontWeight: '600' },
   codeCard: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 20 },
   codeLabel: { color: '#666', marginBottom: 4 },
   code: { fontSize: 28, fontWeight: 'bold', letterSpacing: 2, marginBottom: 8 },

@@ -70,6 +70,10 @@ export function regenerateInviteCode(householdId: number): Promise<{ inviteCode:
   return apiRequest(`/households/${householdId}/invite-code/regenerate`, { method: 'POST' });
 }
 
+export function renameHousehold(householdId: number, name: string): Promise<Household> {
+  return apiRequest(`/households/${householdId}`, { method: 'PATCH', body: { name } });
+}
+
 export function joinHousehold(inviteCode: string): Promise<Household> {
   return apiRequest('/auth/households/join', { method: 'POST', body: { inviteCode } });
 }
