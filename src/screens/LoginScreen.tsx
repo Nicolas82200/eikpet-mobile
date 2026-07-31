@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
+import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -27,7 +28,8 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen>
+      <View style={styles.container}>
       <Text style={styles.title}>EikPet</Text>
       <TextInput
         style={styles.input}
@@ -51,7 +53,8 @@ export default function LoginScreen({ navigation }: Props) {
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
         <Text style={styles.link}>Pas encore de compte ? Creer un compte</Text>
       </TouchableOpacity>
-    </View>
+      </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

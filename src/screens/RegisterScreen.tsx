@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
+import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -38,7 +39,8 @@ export default function RegisterScreen({ navigation }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingScreen>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Creer un compte</Text>
       <TextInput style={styles.input} placeholder="Prenom" value={firstName} onChangeText={setFirstName} />
       <TextInput style={styles.input} placeholder="Nom" value={lastName} onChangeText={setLastName} />
@@ -78,7 +80,8 @@ export default function RegisterScreen({ navigation }: Props) {
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
         <Text style={styles.link}>Deja un compte ? Se connecter</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingScreen>
   );
 }
 

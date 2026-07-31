@@ -13,6 +13,19 @@ export class ApiError extends Error {
 
 let refreshPromise: Promise<void> | null = null;
 
+/**
+ * NestJS renvoie un corps vide (Content-Length: 0) pour un handler qui retourne `null`,
+ * pas le litteral JSON "null". response.json() plante sur un corps vide ("Unexpected end
+ * of input") : on passe par response.text() et on ne parse que si non-vide.
+ */
+async function parseJsonBody<T>(response: Response): Promise<T> {
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+  return JSON.parse(text) as T;
+}
+
 async function refreshAccessToken(): Promise<void> {
   const refreshToken = await getRefreshToken();
   if (!refreshToken) {
@@ -27,7 +40,7 @@ async function refreshAccessToken(): Promise<void> {
     await clearTokens();
     throw new ApiError(response.status, 'Session expiree');
   }
-  const tokens = (await response.json()) as AuthTokens;
+  const tokens = await parseJsonBody<AuthTokens>(response);
   await saveTokens(tokens);
 }
 
@@ -68,14 +81,14 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({ message: response.statusText }));
-    throw new ApiError(response.status, errorBody.message ?? 'Erreur inconnue');
+    const errorBody = await parseJsonBody<{ message?: string }>(response).catch(() => ({ message: undefined }));
+    throw new ApiError(response.status, errorBody?.message ?? response.statusText ?? 'Erreur inconnue');
   }
 
   if (response.status === 204) {
     return undefined as T;
   }
-  return (await response.json()) as T;
+  return parseJsonBody<T>(response);
 }
 
 /** Upload multipart (documents) : ne passe pas par apiRequest car le body n'est pas du JSON. */
@@ -87,8 +100,8 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
     body: formData,
   });
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({ message: response.statusText }));
-    throw new ApiError(response.status, errorBody.message ?? 'Erreur inconnue');
+    const errorBody = await parseJsonBody<{ message?: string }>(response).catch(() => ({ message: undefined }));
+    throw new ApiError(response.status, errorBody?.message ?? response.statusText ?? 'Erreur inconnue');
   }
-  return (await response.json()) as T;
+  return parseJsonBody<T>(response);
 }

@@ -1,38 +1,57 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { Household } from '../types/api';
-import { useAuth } from '../auth/AuthContext';
+import LogoutButton from '../components/LogoutButton';
+import AddIconButton from '../components/AddIconButton';
+import AddModal from '../components/AddModal';
+import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Households'>;
 
 export default function HouseholdsScreen({ navigation }: Props) {
-  const { logout } = useAuth();
   const [households, setHouseholds] = useState<(Household & { role: string })[]>([]);
   const [newHouseholdName, setNewHouseholdName] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerRight: () => <LogoutButton /> });
+  }, [navigation]);
 
   const load = useCallback(() => {
-    api.listHouseholds().then(setHouseholds).catch(() => undefined);
+    api.listHouseholds().then(setHouseholds).catch(showLoadError);
   }, []);
 
   useFocusEffect(load);
 
   const onCreate = async () => {
     if (!newHouseholdName.trim()) return;
-    await api.createHousehold(newHouseholdName.trim());
-    setNewHouseholdName('');
-    load();
+    try {
+      await api.createHousehold(newHouseholdName.trim());
+      setNewHouseholdName('');
+      setModalVisible(false);
+      load();
+    } catch (error) {
+      showError(error);
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <>
       <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.content}
         data={households}
         keyExtractor={(item) => String(item.id)}
-        ListHeaderComponent={<Text style={styles.title}>Mes foyers</Text>}
+        ListHeaderComponent={
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>Mes foyers</Text>
+            <AddIconButton onPress={() => setModalVisible(true)} />
+          </View>
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
@@ -44,34 +63,33 @@ export default function HouseholdsScreen({ navigation }: Props) {
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucun foyer pour l'instant</Text>}
       />
-      <View style={styles.newHouseholdRow}>
+
+      <AddModal visible={modalVisible} title="Creer un foyer" onClose={() => setModalVisible(false)}>
         <TextInput
           style={styles.input}
           placeholder="Nom du nouveau foyer"
           value={newHouseholdName}
           onChangeText={setNewHouseholdName}
+          autoFocus
         />
         <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-          <Text style={styles.addButtonText}>+</Text>
+          <Text style={styles.addButtonText}>Creer</Text>
         </TouchableOpacity>
-      </View>
-      <TouchableOpacity onPress={() => logout()}>
-        <Text style={styles.logout}>Se deconnecter</Text>
-      </TouchableOpacity>
-    </View>
+      </AddModal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  container: { flex: 1 },
+  content: { padding: 16 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: 'bold' },
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 18, fontWeight: '600' },
   cardSubtitle: { color: '#666', marginTop: 4 },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
-  newHouseholdRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, paddingHorizontal: 20, justifyContent: 'center' },
-  addButtonText: { color: 'white', fontSize: 20, fontWeight: 'bold' },
-  logout: { textAlign: 'center', marginTop: 16, color: '#a33' },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
+  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },
+  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });
