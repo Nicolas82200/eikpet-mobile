@@ -5,8 +5,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { Animal } from '../types/api';
-import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import SpeciesPicker from '../components/SpeciesPicker';
+import AddIconButton from '../components/AddIconButton';
+import AddModal from '../components/AddModal';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Animals'>;
 
@@ -15,6 +16,7 @@ export default function AnimalsScreen({ route, navigation }: Props) {
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
   const load = useCallback(() => {
     api.listAnimals(householdId).then(setAnimals).catch(() => undefined);
@@ -27,37 +29,29 @@ export default function AnimalsScreen({ route, navigation }: Props) {
     await api.createAnimal(householdId, { name: name.trim(), species: species.trim() });
     setName('');
     setSpecies('');
+    setModalVisible(false);
     load();
   };
 
   return (
-    <KeyboardAvoidingScreen>
+    <>
       <FlatList
         style={styles.container}
         contentContainerStyle={styles.content}
         data={animals}
         keyExtractor={(item) => String(item.id)}
-        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <>
-            <Text style={styles.title}>{householdName}</Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>{householdName}</Text>
+              <AddIconButton onPress={() => setModalVisible(true)} />
+            </View>
             <TouchableOpacity
               style={styles.calendarLink}
               onPress={() => navigation.navigate('Calendar', { householdId, householdName })}
             >
               <Text style={styles.calendarLinkText}>Voir le calendrier des rappels</Text>
             </TouchableOpacity>
-
-            <View style={styles.form}>
-              <Text style={styles.formTitle}>Ajouter un animal</Text>
-              <TextInput style={styles.input} placeholder="Nom" value={name} onChangeText={setName} />
-              <SpeciesPicker value={species} onChange={setSpecies} />
-              <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-                <Text style={styles.addButtonText}>Ajouter</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.listTitle}>Mes animaux</Text>
           </>
         }
         renderItem={({ item }) => (
@@ -76,24 +70,33 @@ export default function AnimalsScreen({ route, navigation }: Props) {
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucun animal pour l'instant</Text>}
       />
-    </KeyboardAvoidingScreen>
+
+      <AddModal visible={modalVisible} title="Ajouter un animal" onClose={() => setModalVisible(false)}>
+        <TextInput style={styles.input} placeholder="Nom" value={name} onChangeText={setName} autoFocus />
+        <View style={styles.speciesField}>
+          <SpeciesPicker value={species} onChange={setSpecies} />
+        </View>
+        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
+          <Text style={styles.addButtonText}>Ajouter</Text>
+        </TouchableOpacity>
+      </AddModal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  title: { fontSize: 24, fontWeight: 'bold' },
   calendarLink: { marginBottom: 16 },
   calendarLinkText: { color: '#2f6f4f', fontWeight: '600' },
-  form: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 20, gap: 10 },
-  formTitle: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
-  listTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8, color: '#666' },
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 18, fontWeight: '600' },
   cardSubtitle: { color: '#666', marginTop: 4 },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 12, marginTop: 4 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
+  speciesField: { marginBottom: 16 },
+  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });

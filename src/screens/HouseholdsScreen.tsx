@@ -5,14 +5,16 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { Household } from '../types/api';
-import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import LogoutButton from '../components/LogoutButton';
+import AddIconButton from '../components/AddIconButton';
+import AddModal from '../components/AddModal';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Households'>;
 
 export default function HouseholdsScreen({ navigation }: Props) {
   const [households, setHouseholds] = useState<(Household & { role: string })[]>([]);
   const [newHouseholdName, setNewHouseholdName] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ headerRight: () => <LogoutButton /> });
@@ -28,35 +30,22 @@ export default function HouseholdsScreen({ navigation }: Props) {
     if (!newHouseholdName.trim()) return;
     await api.createHousehold(newHouseholdName.trim());
     setNewHouseholdName('');
+    setModalVisible(false);
     load();
   };
 
   return (
-    <KeyboardAvoidingScreen>
+    <>
       <FlatList
         style={styles.container}
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
         data={households}
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={
-          <>
+          <View style={styles.titleRow}>
             <Text style={styles.title}>Mes foyers</Text>
-            <View style={styles.form}>
-              <Text style={styles.formTitle}>Creer un foyer</Text>
-              <View style={styles.newHouseholdRow}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Nom du nouveau foyer"
-                  value={newHouseholdName}
-                  onChangeText={setNewHouseholdName}
-                />
-                <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-                  <Text style={styles.addButtonText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </>
+            <AddIconButton onPress={() => setModalVisible(true)} />
+          </View>
         }
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -69,22 +58,33 @@ export default function HouseholdsScreen({ navigation }: Props) {
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucun foyer pour l'instant</Text>}
       />
-    </KeyboardAvoidingScreen>
+
+      <AddModal visible={modalVisible} title="Creer un foyer" onClose={() => setModalVisible(false)}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nom du nouveau foyer"
+          value={newHouseholdName}
+          onChangeText={setNewHouseholdName}
+          autoFocus
+        />
+        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
+          <Text style={styles.addButtonText}>Creer</Text>
+        </TouchableOpacity>
+      </AddModal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
-  form: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 20 },
-  formTitle: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: 'bold' },
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 18, fontWeight: '600' },
   cardSubtitle: { color: '#666', marginTop: 4 },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
-  newHouseholdRow: { flexDirection: 'row', gap: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, paddingHorizontal: 20, justifyContent: 'center' },
-  addButtonText: { color: 'white', fontSize: 20, fontWeight: 'bold' },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
+  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },
+  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });
