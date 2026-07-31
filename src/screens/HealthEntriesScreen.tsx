@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -28,6 +28,25 @@ export default function HealthEntriesScreen({ route }: Props) {
     await api.createHealthEntry(animalId, { type, scheduledDate });
     setScheduledDate('');
     load();
+  };
+
+  const onMarkDone = async (entry: HealthEntry) => {
+    await api.updateHealthEntry(animalId, entry.id, { status: 'fait' });
+    load();
+  };
+
+  const onDelete = (entry: HealthEntry) => {
+    Alert.alert('Supprimer cette entree ?', undefined, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: async () => {
+          await api.deleteHealthEntry(animalId, entry.id);
+          load();
+        },
+      },
+    ]);
   };
 
   return (
@@ -75,6 +94,16 @@ export default function HealthEntriesScreen({ route }: Props) {
               {item.scheduledDate} — {item.status === 'fait' ? 'Fait' : 'Prevu'}
             </Text>
             {item.nextReminderDate && <Text style={styles.cardSubtitle}>Prochain rappel : {item.nextReminderDate}</Text>}
+            <View style={styles.cardActions}>
+              {item.status !== 'fait' && (
+                <TouchableOpacity onPress={() => onMarkDone(item)}>
+                  <Text style={styles.cardActionText}>Marquer fait</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={() => onDelete(item)}>
+                <Text style={styles.cardActionTextDanger}>Supprimer</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l'instant</Text>}
@@ -92,6 +121,9 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '600', textTransform: 'capitalize' },
   cardSubtitle: { color: '#666', marginTop: 4 },
+  cardActions: { flexDirection: 'row', gap: 16, marginTop: 10 },
+  cardActionText: { color: '#2f6f4f', fontWeight: '600' },
+  cardActionTextDanger: { color: '#a33', fontWeight: '600' },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
   typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   typeChip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },

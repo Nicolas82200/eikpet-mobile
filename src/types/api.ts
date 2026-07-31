@@ -49,6 +49,25 @@ export interface MedicalProfile {
   referringVetPhone: string | null;
 }
 
+export interface Treatment {
+  id: number;
+  animalId: number;
+  name: string;
+  dosage: string | null;
+  frequency: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  notes: string | null;
+}
+
+export interface SurgicalHistoryEntry {
+  id: number;
+  animalId: number;
+  procedureName: string;
+  performedOn: string | null;
+  notes: string | null;
+}
+
 export type HealthEntryType =
   | 'vaccin'
   | 'vermifuge'

@@ -11,6 +11,8 @@ import type {
   HouseholdMember,
   HealthEntry,
   MedicalProfile,
+  SurgicalHistoryEntry,
+  Treatment,
 } from '../types/api';
 
 // --- Auth ---
@@ -80,6 +82,10 @@ export function updateAnimal(animalId: number, input: Partial<Animal>): Promise<
   return apiRequest(`/animals/${animalId}`, { method: 'PATCH', body: input });
 }
 
+export function deleteAnimal(animalId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}`, { method: 'DELETE' });
+}
+
 // --- Fiche medicale ---
 
 export function getMedicalProfile(animalId: number): Promise<MedicalProfile | null> {
@@ -88,6 +94,36 @@ export function getMedicalProfile(animalId: number): Promise<MedicalProfile | nu
 
 export function upsertMedicalProfile(animalId: number, input: Partial<MedicalProfile>): Promise<MedicalProfile> {
   return apiRequest(`/animals/${animalId}/medical-profile`, { method: 'PUT', body: input });
+}
+
+export function listTreatments(animalId: number): Promise<Treatment[]> {
+  return apiRequest(`/animals/${animalId}/treatments`);
+}
+
+export function createTreatment(
+  animalId: number,
+  input: Partial<Omit<Treatment, 'id' | 'animalId'>>,
+): Promise<Treatment> {
+  return apiRequest(`/animals/${animalId}/treatments`, { method: 'POST', body: input });
+}
+
+export function deleteTreatment(animalId: number, treatmentId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/treatments/${treatmentId}`, { method: 'DELETE' });
+}
+
+export function listSurgicalHistory(animalId: number): Promise<SurgicalHistoryEntry[]> {
+  return apiRequest(`/animals/${animalId}/surgical-history`);
+}
+
+export function createSurgicalHistory(
+  animalId: number,
+  input: Partial<Omit<SurgicalHistoryEntry, 'id' | 'animalId'>>,
+): Promise<SurgicalHistoryEntry> {
+  return apiRequest(`/animals/${animalId}/surgical-history`, { method: 'POST', body: input });
+}
+
+export function deleteSurgicalHistory(animalId: number, entryId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/surgical-history/${entryId}`, { method: 'DELETE' });
 }
 
 // --- Carnet de sante ---
@@ -101,6 +137,18 @@ export function createHealthEntry(
   input: Partial<HealthEntry> & { recurrenceMonths?: number },
 ): Promise<HealthEntry> {
   return apiRequest(`/animals/${animalId}/health-entries`, { method: 'POST', body: input });
+}
+
+export function updateHealthEntry(
+  animalId: number,
+  entryId: number,
+  input: Partial<HealthEntry> & { recurrenceMonths?: number },
+): Promise<HealthEntry> {
+  return apiRequest(`/animals/${animalId}/health-entries/${entryId}`, { method: 'PUT', body: input });
+}
+
+export function deleteHealthEntry(animalId: number, entryId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/health-entries/${entryId}`, { method: 'DELETE' });
 }
 
 // --- Calendrier ---
