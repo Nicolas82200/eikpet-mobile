@@ -6,6 +6,9 @@ import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { Animal, AnimalSex } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
+import ChipPicker from '../components/ChipPicker';
+import { getBreedsForSpecies } from '../data/breeds';
+import { getColorsForSpecies } from '../data/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AnimalDetail'>;
 
@@ -81,17 +84,19 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           <TextInput style={styles.input} value={form.name ?? ''} onChangeText={(v) => setForm((f) => ({ ...f, name: v }))} />
 
           <Text style={styles.label}>Race</Text>
-          <TextInput
-            style={styles.input}
+          <ChipPicker
             value={form.breed ?? ''}
-            onChangeText={(v) => setForm((f) => ({ ...f, breed: v }))}
+            onChange={(v) => setForm((f) => ({ ...f, breed: v }))}
+            options={getBreedsForSpecies(animal.species)}
+            customPlaceholder="Preciser la race"
           />
 
           <Text style={styles.label}>Robe / couleur</Text>
-          <TextInput
-            style={styles.input}
+          <ChipPicker
             value={form.color ?? ''}
-            onChangeText={(v) => setForm((f) => ({ ...f, color: v }))}
+            onChange={(v) => setForm((f) => ({ ...f, color: v }))}
+            options={getColorsForSpecies(animal.species)}
+            customPlaceholder="Preciser la robe / couleur"
           />
 
           <Text style={styles.label}>Sexe</Text>
