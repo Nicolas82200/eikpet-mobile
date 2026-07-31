@@ -156,14 +156,18 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
 
         <TouchableOpacity
           style={styles.card}
-          onPress={() => navigation.navigate('MedicalProfile', { animalId, animalName: animal.name })}
+          onPress={() =>
+            navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
+          }
         >
           <Text style={styles.cardTitle}>Fiche medicale</Text>
           <Text style={styles.cardSubtitle}>Antecedents, allergies, traitements, assurance...</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.card}
-          onPress={() => navigation.navigate('HealthEntries', { animalId, animalName: animal.name })}
+          onPress={() =>
+            navigation.navigate('HealthEntries', { animalId, animalName: animal.name, species: animal.species })
+          }
         >
           <Text style={styles.cardTitle}>Carnet de sante</Text>
           <Text style={styles.cardSubtitle}>Vaccins, vermifuges, rdv veto...</Text>

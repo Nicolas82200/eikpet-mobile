@@ -8,6 +8,9 @@ import type { MedicalProfile, SurgicalHistoryEntry, Treatment } from '../types/a
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import AutocompleteInput from '../components/AutocompleteInput';
+import { getProceduresForSpecies } from '../data/procedures';
+import { TREATMENT_TYPES } from '../data/treatmentTypes';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MedicalProfile'>;
@@ -25,7 +28,7 @@ const FIELDS: { key: keyof MedicalProfile; label: string }[] = [
 ];
 
 export default function MedicalProfileScreen({ route }: Props) {
-  const { animalId, animalName } = route.params;
+  const { animalId, animalName, species } = route.params;
   const [profile, setProfile] = useState<Partial<MedicalProfile>>({});
   const [saving, setSaving] = useState(false);
 
@@ -180,11 +183,11 @@ export default function MedicalProfileScreen({ route }: Props) {
         title="Ajouter un traitement"
         onClose={() => setTreatmentModalVisible(false)}
       >
-        <TextInput
-          style={styles.input}
-          placeholder="Nom du traitement"
+        <AutocompleteInput
           value={treatmentName}
-          onChangeText={setTreatmentName}
+          onChange={setTreatmentName}
+          options={TREATMENT_TYPES}
+          placeholder="Nom du traitement"
           autoFocus
         />
         <TextInput
@@ -203,11 +206,11 @@ export default function MedicalProfileScreen({ route }: Props) {
         title="Ajouter un antecedent chirurgical"
         onClose={() => setSurgicalModalVisible(false)}
       >
-        <TextInput
-          style={styles.input}
-          placeholder="Operation"
+        <AutocompleteInput
           value={procedureName}
-          onChangeText={setProcedureName}
+          onChange={setProcedureName}
+          options={getProceduresForSpecies(species)}
+          placeholder="Operation"
           autoFocus
         />
         <TextInput

@@ -6,10 +6,11 @@ interface Props {
   onChange: (value: string) => void;
   options: readonly string[];
   placeholder?: string;
+  autoFocus?: boolean;
 }
 
 /** Champ texte avec suggestions filtrees en dessous, plutot que d'afficher toutes les options d'un coup. */
-export default function AutocompleteInput({ value, onChange, options, placeholder }: Props) {
+export default function AutocompleteInput({ value, onChange, options, placeholder, autoFocus }: Props) {
   const [focused, setFocused] = useState(false);
 
   const query = value.trim().toLowerCase();
@@ -19,12 +20,13 @@ export default function AutocompleteInput({ value, onChange, options, placeholde
   const showSuggestions = suggestions.length > 0 && !(suggestions.length === 1 && suggestions[0].toLowerCase() === query);
 
   return (
-    <View>
+    <View style={styles.wrapper}>
       <TextInput
         style={styles.input}
         placeholder={placeholder}
         value={value}
         onChangeText={onChange}
+        autoFocus={autoFocus}
         onFocus={() => setFocused(true)}
         onBlur={() => setTimeout(() => setFocused(false), 150)}
       />
@@ -49,6 +51,7 @@ export default function AutocompleteInput({ value, onChange, options, placeholde
 }
 
 const styles = StyleSheet.create({
+  wrapper: { marginBottom: 12 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, backgroundColor: 'white' },
   suggestions: {
     borderWidth: 1,

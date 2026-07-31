@@ -7,6 +7,8 @@ import * as api from '../api/endpoints';
 import type { HealthEntry, HealthEntryType } from '../types/api';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import AutocompleteInput from '../components/AutocompleteInput';
+import { getVaccinesForSpecies } from '../data/vaccines';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
@@ -14,9 +16,10 @@ type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
 const TYPES: HealthEntryType[] = ['vaccin', 'vermifuge', 'rdv_veto', 'osteo', 'dentiste_equin', 'marechal', 'autre'];
 
 export default function HealthEntriesScreen({ route }: Props) {
-  const { animalId, animalName } = route.params;
+  const { animalId, animalName, species } = route.params;
   const [entries, setEntries] = useState<HealthEntry[]>([]);
   const [type, setType] = useState<HealthEntryType>('vaccin');
+  const [customTypeLabel, setCustomTypeLabel] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -29,7 +32,12 @@ export default function HealthEntriesScreen({ route }: Props) {
   const onCreate = async () => {
     if (!scheduledDate) return;
     try {
-      await api.createHealthEntry(animalId, { type, scheduledDate });
+      await api.createHealthEntry(animalId, {
+        type,
+        scheduledDate,
+        customTypeLabel: customTypeLabel.trim() || undefined,
+      });
+      setCustomTypeLabel('');
       setScheduledDate('');
       setModalVisible(false);
       load();
@@ -112,12 +120,18 @@ export default function HealthEntriesScreen({ route }: Props) {
             </TouchableOpacity>
           ))}
         </View>
+        <AutocompleteInput
+          value={customTypeLabel}
+          onChange={setCustomTypeLabel}
+          options={type === 'vaccin' ? getVaccinesForSpecies(species) : []}
+          placeholder={type === 'vaccin' ? 'Nom du vaccin (optionnel)' : 'Precision (optionnel)'}
+          autoFocus
+        />
         <TextInput
           style={styles.input}
           placeholder="Date (AAAA-MM-JJ)"
           value={scheduledDate}
           onChangeText={setScheduledDate}
-          autoFocus
         />
         <TouchableOpacity style={styles.addButton} onPress={onCreate}>
           <Text style={styles.addButtonText}>Ajouter</Text>
