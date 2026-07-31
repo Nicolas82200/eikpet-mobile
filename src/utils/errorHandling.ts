@@ -9,6 +9,11 @@ export function getErrorMessage(error: unknown, fallback = 'Une erreur est surve
     // fetch() rejette avec un TypeError generique en cas de probleme reseau
     return 'Impossible de contacter le serveur. Verifiez votre connexion.';
   }
+  if (error instanceof Error) {
+    // Erreur JS inattendue (bug) : on affiche le detail pour pouvoir diagnostiquer,
+    // plutot qu'un message generique qui masque la cause reelle.
+    return `${fallback} (${error.name}: ${error.message})`;
+  }
   return fallback;
 }
 
