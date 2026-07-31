@@ -9,6 +9,7 @@ import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
 import DatePickerInput from '../components/DatePickerInput';
+import RecurrencePicker from '../components/RecurrencePicker';
 import { getVaccinesForSpecies } from '../data/vaccines';
 import { getDewormersForSpecies } from '../data/dewormers';
 import { showError, showLoadError } from '../utils/errorHandling';
@@ -34,6 +35,7 @@ export default function CalendarScreen({ route }: Props) {
   const [type, setType] = useState<HealthEntryType>('vaccin');
   const [customTypeLabel, setCustomTypeLabel] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
+  const [recurrenceMonths, setRecurrenceMonths] = useState<number | null>(null);
 
   const load = useCallback(() => {
     api.listUpcomingReminders(householdId).then(setEntries).catch(showLoadError);
@@ -56,9 +58,11 @@ export default function CalendarScreen({ route }: Props) {
         type,
         scheduledDate,
         customTypeLabel: customTypeLabel.trim() || undefined,
+        recurrenceMonths: recurrenceMonths ?? undefined,
       });
       setCustomTypeLabel('');
       setScheduledDate('');
+      setRecurrenceMonths(null);
       setModalVisible(false);
       load();
     } catch (error) {
@@ -130,6 +134,7 @@ export default function CalendarScreen({ route }: Props) {
               placeholder={type === 'vaccin' ? 'Nom du vaccin (optionnel)' : 'Precision (optionnel)'}
             />
             <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
+            <RecurrencePicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
             <TouchableOpacity style={styles.addButton} onPress={onCreate}>
               <Text style={styles.addButtonText}>Ajouter</Text>
             </TouchableOpacity>
