@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
@@ -8,6 +9,7 @@ import type { Animal, AnimalSex } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AutocompleteInput from '../components/AutocompleteInput';
 import DatePickerInput from '../components/DatePickerInput';
+import AuthenticatedImage from '../components/AuthenticatedImage';
 import { getBreedsForSpecies } from '../data/breeds';
 import { getColorsForSpecies } from '../data/colors';
 import { showError, showLoadError } from '../utils/errorHandling';
@@ -25,6 +27,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [form, setForm] = useState<Partial<Animal>>({});
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const load = useCallback(() => {
     api
@@ -60,6 +63,37 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
     }
   };
 
+  const onPickPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission refusee', "Autorise l'acces aux photos pour changer l'image de profil.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (result.canceled || !result.assets?.[0]) {
+      return;
+    }
+    const asset = result.assets[0];
+    setUploadingPhoto(true);
+    try {
+      const updated = await api.uploadAnimalPhoto(animalId, {
+        uri: asset.uri,
+        name: asset.fileName ?? 'photo.jpg',
+        type: asset.mimeType ?? 'image/jpeg',
+      });
+      setAnimal(updated);
+    } catch (error) {
+      showError(error, 'Envoi de la photo impossible');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const onDelete = () => {
     Alert.alert('Supprimer cet animal ?', 'Cette action est irreversible.', [
       { text: 'Annuler', style: 'cancel' },
@@ -86,6 +120,17 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
     <KeyboardAvoidingScreen>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>{animal.name}</Text>
+
+        <TouchableOpacity style={styles.photoContainer} onPress={onPickPhoto} disabled={uploadingPhoto}>
+          {animal.photoUrl ? (
+            <AuthenticatedImage uri={api.getAnimalPhotoUrl(animal.id)} style={styles.photo} />
+          ) : (
+            <View style={styles.photoPlaceholder}>
+              <Text style={styles.photoPlaceholderText}>Ajouter une photo</Text>
+            </View>
+          )}
+          {uploadingPhoto && <Text style={styles.photoUploading}>Envoi en cours...</Text>}
+        </TouchableOpacity>
 
         <View style={styles.form}>
           <Text style={styles.label}>Nom</Text>
@@ -191,6 +236,21 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: { padding: 16 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  photoContainer: { alignSelf: 'center', marginBottom: 20 },
+  photo: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#eee' },
+  photoPlaceholder: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: '#f2f2f2',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoPlaceholderText: { color: '#666', textAlign: 'center', paddingHorizontal: 8 },
+  photoUploading: { textAlign: 'center', color: '#666', marginTop: 6 },
   form: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 20 },
   label: { color: '#666', marginBottom: 4, marginTop: 10 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, backgroundColor: 'white' },

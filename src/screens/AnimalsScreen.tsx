@@ -8,6 +8,7 @@ import type { Animal } from '../types/api';
 import SpeciesPicker from '../components/SpeciesPicker';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import AuthenticatedImage from '../components/AuthenticatedImage';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Animals'>;
@@ -66,11 +67,20 @@ export default function AnimalsScreen({ route, navigation }: Props) {
               navigation.navigate('AnimalDetail', { animalId: item.id, animalName: item.name, householdId })
             }
           >
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text style={styles.cardSubtitle}>
-              {item.species}
-              {item.age ? ` — ${item.age.years} an(s) ${item.age.months} mois` : ''}
-            </Text>
+            <View style={styles.cardRow}>
+              {item.photoUrl ? (
+                <AuthenticatedImage uri={api.getAnimalPhotoUrl(item.id)} style={styles.thumbnail} />
+              ) : (
+                <View style={styles.thumbnailPlaceholder} />
+              )}
+              <View>
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                <Text style={styles.cardSubtitle}>
+                  {item.species}
+                  {item.age ? ` — ${item.age.years} an(s) ${item.age.months} mois` : ''}
+                </Text>
+              </View>
+            </View>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucun animal pour l'instant</Text>}
@@ -97,6 +107,9 @@ const styles = StyleSheet.create({
   calendarLink: { marginBottom: 16 },
   calendarLinkText: { color: '#2f6f4f', fontWeight: '600' },
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
+  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  thumbnail: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#eee' },
+  thumbnailPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#ddd' },
   cardTitle: { fontSize: 18, fontWeight: '600' },
   cardSubtitle: { color: '#666', marginTop: 4 },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },

@@ -92,6 +92,19 @@ export function deleteAnimal(animalId: number): Promise<void> {
   return apiRequest(`/animals/${animalId}`, { method: 'DELETE' });
 }
 
+export function getAnimalPhotoUrl(animalId: number): string {
+  return `${API_BASE_URL}/animals/${animalId}/photo`;
+}
+
+export async function uploadAnimalPhoto(
+  animalId: number,
+  file: { uri: string; name: string; type: string },
+): Promise<Animal> {
+  const formData = new FormData();
+  formData.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
+  return apiUpload(`/animals/${animalId}/photo`, formData);
+}
+
 // --- Fiche medicale ---
 
 export function getMedicalProfile(animalId: number): Promise<MedicalProfile | null> {
