@@ -187,3 +187,7 @@ export async function uploadDocument(
   }
   return apiUpload(`/households/${householdId}/documents`, formData);
 }
+
+export function deleteDocument(documentId: number): Promise<void> {
+  return apiRequest(`/documents/${documentId}`, { method: 'DELETE' });
+}
