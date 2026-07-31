@@ -12,10 +12,15 @@ import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Households'>;
 
+type Mode = 'create' | 'join';
+
 export default function HouseholdsScreen({ navigation }: Props) {
   const [households, setHouseholds] = useState<(Household & { role: string })[]>([]);
+  const [mode, setMode] = useState<Mode>('create');
   const [newHouseholdName, setNewHouseholdName] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({ headerRight: () => <LogoutButton /> });
@@ -29,6 +34,7 @@ export default function HouseholdsScreen({ navigation }: Props) {
 
   const onCreate = async () => {
     if (!newHouseholdName.trim()) return;
+    setSubmitting(true);
     try {
       await api.createHousehold(newHouseholdName.trim());
       setNewHouseholdName('');
@@ -36,6 +42,23 @@ export default function HouseholdsScreen({ navigation }: Props) {
       load();
     } catch (error) {
       showError(error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onJoin = async () => {
+    if (!inviteCode.trim()) return;
+    setSubmitting(true);
+    try {
+      await api.joinHousehold(inviteCode.trim().toUpperCase());
+      setInviteCode('');
+      setModalVisible(false);
+      load();
+    } catch (error) {
+      showError(error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -75,17 +98,54 @@ export default function HouseholdsScreen({ navigation }: Props) {
         ListEmptyComponent={<Text style={styles.empty}>Aucun foyer pour l'instant</Text>}
       />
 
-      <AddModal visible={modalVisible} title="Creer un foyer" onClose={() => setModalVisible(false)}>
-        <TextInput
-          style={styles.input}
-          placeholder="Nom du nouveau foyer"
-          value={newHouseholdName}
-          onChangeText={setNewHouseholdName}
-          autoFocus
-        />
-        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-          <Text style={styles.addButtonText}>Creer</Text>
-        </TouchableOpacity>
+      <AddModal
+        visible={modalVisible}
+        title={mode === 'create' ? 'Creer un foyer' : 'Rejoindre un foyer'}
+        onClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modeRow}>
+          <TouchableOpacity
+            style={[styles.modeChip, mode === 'create' && styles.modeChipActive]}
+            onPress={() => setMode('create')}
+          >
+            <Text style={mode === 'create' ? styles.modeChipTextActive : styles.modeChipText}>Creer</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeChip, mode === 'join' && styles.modeChipActive]}
+            onPress={() => setMode('join')}
+          >
+            <Text style={mode === 'join' ? styles.modeChipTextActive : styles.modeChipText}>Rejoindre</Text>
+          </TouchableOpacity>
+        </View>
+
+        {mode === 'create' ? (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Nom du nouveau foyer"
+              value={newHouseholdName}
+              onChangeText={setNewHouseholdName}
+              autoFocus
+            />
+            <TouchableOpacity style={styles.addButton} onPress={onCreate} disabled={submitting}>
+              <Text style={styles.addButtonText}>{submitting ? 'Creation...' : 'Creer'}</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Code d'invitation"
+              autoCapitalize="characters"
+              value={inviteCode}
+              onChangeText={setInviteCode}
+              autoFocus
+            />
+            <TouchableOpacity style={styles.addButton} onPress={onJoin} disabled={submitting}>
+              <Text style={styles.addButtonText}>{submitting ? 'Connexion...' : 'Rejoindre'}</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </AddModal>
     </>
   );
@@ -101,6 +161,11 @@ const styles = StyleSheet.create({
   cardSubtitle: { color: '#666', marginTop: 4 },
   membersLink: { color: '#2f6f4f', fontWeight: '600', marginTop: 8 },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
+  modeRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  modeChip: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, paddingVertical: 10 },
+  modeChipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
+  modeChipText: { color: '#333', textAlign: 'center', fontWeight: '600' },
+  modeChipTextActive: { color: 'white', textAlign: 'center', fontWeight: '600' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
   addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
