@@ -1,6 +1,8 @@
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { email: string };
 };
 
 export type AppStackParamList = {
@@ -13,4 +15,5 @@ export type AppStackParamList = {
   Documents: { householdId: number; animalId?: number };
   AppointmentFollowUp: { animalId: number; entryId: number };
   HouseholdMembers: { householdId: number; householdName: string; inviteCode: string; isOwner: boolean };
+  Account: undefined;
 };

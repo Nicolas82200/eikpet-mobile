@@ -24,7 +24,16 @@ export default function HouseholdsScreen({ navigation }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ headerRight: () => <LogoutButton /> });
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => navigation.navigate('Account')}>
+            <Text style={styles.accountLink}>Mon compte</Text>
+          </TouchableOpacity>
+          <LogoutButton />
+        </View>
+      ),
+    });
   }, [navigation]);
 
   const load = useCallback(() => {
@@ -158,6 +167,8 @@ export default function HouseholdsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  accountLink: { color: '#2f6f4f', fontWeight: '600' },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   title: { fontSize: 24, fontWeight: 'bold' },
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },

@@ -50,6 +50,9 @@ export default function LoginScreen({ navigation }: Props) {
       <TouchableOpacity style={styles.button} onPress={onSubmit} disabled={submitting}>
         <Text style={styles.buttonText}>{submitting ? 'Connexion...' : 'Se connecter'}</Text>
       </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+        <Text style={styles.link}>Mot de passe oublie ?</Text>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
         <Text style={styles.link}>Pas encore de compte ? Creer un compte</Text>
       </TouchableOpacity>

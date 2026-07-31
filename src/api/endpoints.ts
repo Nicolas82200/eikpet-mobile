@@ -52,6 +52,22 @@ export async function logout(): Promise<void> {
   await clearTokens();
 }
 
+export function forgotPassword(email: string): Promise<void> {
+  return apiRequest('/auth/password/forgot', { method: 'POST', body: { email }, authenticated: false });
+}
+
+export function resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+  return apiRequest('/auth/password/reset', {
+    method: 'POST',
+    body: { email, code, newPassword },
+    authenticated: false,
+  });
+}
+
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return apiRequest('/auth/password', { method: 'PATCH', body: { currentPassword, newPassword } });
+}
+
 // --- Foyers ---
 
 export function listHouseholds(): Promise<(Household & { role: 'owner' | 'member' })[]> {

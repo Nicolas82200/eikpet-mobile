@@ -8,6 +8,9 @@ import { registerForPushNotifications } from '../notifications/registerForPushNo
 import type { AppStackParamList, AuthStackParamList } from './types';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
+import AccountScreen from '../screens/AccountScreen';
 import HouseholdsScreen from '../screens/HouseholdsScreen';
 import AnimalsScreen from '../screens/AnimalsScreen';
 import AnimalDetailScreen from '../screens/AnimalDetailScreen';
@@ -26,6 +29,8 @@ function AuthNavigator() {
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </AuthStack.Navigator>
   );
 }
@@ -81,6 +86,7 @@ function AppNavigator() {
         component={HouseholdMembersScreen}
         options={{ title: 'Membres du foyer' }}
       />
+      <AppStack.Screen name="Account" component={AccountScreen} options={{ title: 'Mon compte' }} />
     </AppStack.Navigator>
   );
 }
