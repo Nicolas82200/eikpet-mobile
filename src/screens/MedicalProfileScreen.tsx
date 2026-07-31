@@ -11,17 +11,22 @@ import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
 import { getProceduresForSpecies } from '../data/procedures';
 import { TREATMENT_TYPES } from '../data/treatmentTypes';
+import { getChronicConditionsForSpecies } from '../data/medicalConditions';
+import { ALLERGY_SUGGESTIONS } from '../data/allergies';
+import { DIETARY_NEEDS_SUGGESTIONS } from '../data/diets';
+import { getBloodTypesForSpecies } from '../data/bloodTypes';
+import { INSURANCE_PROVIDERS } from '../data/insuranceProviders';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MedicalProfile'>;
 
-const FIELDS: { key: keyof MedicalProfile; label: string }[] = [
-  { key: 'chronicConditions', label: 'Maladies chroniques' },
-  { key: 'allergies', label: 'Allergies' },
-  { key: 'dietaryNeeds', label: 'Regime alimentaire particulier' },
+const FIELDS: { key: keyof MedicalProfile; label: string; options?: (species: string) => readonly string[] }[] = [
+  { key: 'chronicConditions', label: 'Maladies chroniques', options: getChronicConditionsForSpecies },
+  { key: 'allergies', label: 'Allergies', options: () => ALLERGY_SUGGESTIONS },
+  { key: 'dietaryNeeds', label: 'Regime alimentaire particulier', options: () => DIETARY_NEEDS_SUGGESTIONS },
   { key: 'behavioralNotes', label: 'Notes comportementales' },
-  { key: 'bloodType', label: 'Groupe sanguin' },
-  { key: 'insuranceProvider', label: 'Assureur' },
+  { key: 'bloodType', label: 'Groupe sanguin', options: getBloodTypesForSpecies },
+  { key: 'insuranceProvider', label: 'Assureur', options: () => INSURANCE_PROVIDERS },
   { key: 'insurancePolicyNumber', label: "N° de contrat d'assurance" },
   { key: 'referringVetName', label: 'Veto referent' },
   { key: 'referringVetPhone', label: 'Telephone du veto referent' },
@@ -135,11 +140,19 @@ export default function MedicalProfileScreen({ route }: Props) {
           {FIELDS.map((field) => (
             <View key={field.key} style={styles.fieldGroup}>
               <Text style={styles.label}>{field.label}</Text>
-              <TextInput
-                style={styles.input}
-                value={(profile[field.key] as string) ?? ''}
-                onChangeText={(text) => setProfile((prev) => ({ ...prev, [field.key]: text }))}
-              />
+              {field.options ? (
+                <AutocompleteInput
+                  value={(profile[field.key] as string) ?? ''}
+                  onChange={(text) => setProfile((prev) => ({ ...prev, [field.key]: text }))}
+                  options={field.options(species)}
+                />
+              ) : (
+                <TextInput
+                  style={styles.input}
+                  value={(profile[field.key] as string) ?? ''}
+                  onChangeText={(text) => setProfile((prev) => ({ ...prev, [field.key]: text }))}
+                />
+              )}
             </View>
           ))}
           <TouchableOpacity style={styles.button} onPress={onSave} disabled={saving}>

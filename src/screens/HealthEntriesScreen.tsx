@@ -9,11 +9,18 @@ import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
 import { getVaccinesForSpecies } from '../data/vaccines';
+import { getDewormersForSpecies } from '../data/dewormers';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
 
 const TYPES: HealthEntryType[] = ['vaccin', 'vermifuge', 'rdv_veto', 'osteo', 'dentiste_equin', 'marechal', 'autre'];
+
+function getPrecisionOptions(type: HealthEntryType, species: string): readonly string[] {
+  if (type === 'vaccin') return getVaccinesForSpecies(species);
+  if (type === 'vermifuge') return getDewormersForSpecies(species);
+  return [];
+}
 
 export default function HealthEntriesScreen({ route }: Props) {
   const { animalId, animalName, species } = route.params;
@@ -123,7 +130,7 @@ export default function HealthEntriesScreen({ route }: Props) {
         <AutocompleteInput
           value={customTypeLabel}
           onChange={setCustomTypeLabel}
-          options={type === 'vaccin' ? getVaccinesForSpecies(species) : []}
+          options={getPrecisionOptions(type, species)}
           placeholder={type === 'vaccin' ? 'Nom du vaccin (optionnel)' : 'Precision (optionnel)'}
           autoFocus
         />
