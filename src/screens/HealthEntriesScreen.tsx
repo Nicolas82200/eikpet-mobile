@@ -1,0 +1,91 @@
+import React, { useCallback, useState } from 'react';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../navigation/types';
+import * as api from '../api/endpoints';
+import type { HealthEntry, HealthEntryType } from '../types/api';
+
+type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
+
+const TYPES: HealthEntryType[] = ['vaccin', 'vermifuge', 'rdv_veto', 'osteo', 'dentiste_equin', 'marechal', 'autre'];
+
+export default function HealthEntriesScreen({ route }: Props) {
+  const { animalId, animalName } = route.params;
+  const [entries, setEntries] = useState<HealthEntry[]>([]);
+  const [type, setType] = useState<HealthEntryType>('vaccin');
+  const [scheduledDate, setScheduledDate] = useState('');
+
+  const load = useCallback(() => {
+    api.listHealthEntries(animalId).then(setEntries).catch(() => undefined);
+  }, [animalId]);
+
+  useFocusEffect(load);
+
+  const onCreate = async () => {
+    if (!scheduledDate) return;
+    await api.createHealthEntry(animalId, { type, scheduledDate });
+    setScheduledDate('');
+    load();
+  };
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={entries}
+        keyExtractor={(item) => String(item.id)}
+        ListHeaderComponent={<Text style={styles.title}>Carnet de sante — {animalName}</Text>}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>{item.customTypeLabel ?? item.type}</Text>
+            <Text style={styles.cardSubtitle}>
+              {item.scheduledDate} — {item.status === 'fait' ? 'Fait' : 'Prevu'}
+            </Text>
+            {item.nextReminderDate && <Text style={styles.cardSubtitle}>Prochain rappel : {item.nextReminderDate}</Text>}
+          </View>
+        )}
+        ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l'instant</Text>}
+      />
+      <View style={styles.typeRow}>
+        {TYPES.map((t) => (
+          <TouchableOpacity
+            key={t}
+            style={[styles.typeChip, t === type && styles.typeChipActive]}
+            onPress={() => setType(t)}
+          >
+            <Text style={t === type ? styles.typeChipTextActive : styles.typeChipText}>{t}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <View style={styles.newEntryRow}>
+        <TextInput
+          style={styles.input}
+          placeholder="Date (AAAA-MM-JJ)"
+          value={scheduledDate}
+          onChangeText={setScheduledDate}
+        />
+        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
+          <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
+  card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
+  cardTitle: { fontSize: 16, fontWeight: '600', textTransform: 'capitalize' },
+  cardSubtitle: { color: '#666', marginTop: 4 },
+  empty: { color: '#666', textAlign: 'center', marginTop: 24 },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+  typeChip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
+  typeChipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
+  typeChipText: { color: '#333' },
+  typeChipTextActive: { color: 'white' },
+  newEntryRow: { flexDirection: 'row', gap: 8 },
+  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
+  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, paddingHorizontal: 20, justifyContent: 'center' },
+  addButtonText: { color: 'white', fontSize: 20, fontWeight: 'bold' },
+});

@@ -1,0 +1,95 @@
+// Types partages avec le backend (backend/src/**/*.repository.ts).
+// Pas de generation automatique (pas d'ORM) : a garder synchronise a la main.
+
+export interface Household {
+  id: number;
+  name: string;
+  inviteCode: string;
+  createdAt: string;
+}
+
+export interface HouseholdMember {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'owner' | 'member';
+}
+
+export type AnimalSex = 'male' | 'femelle' | 'inconnu';
+
+export interface Animal {
+  id: number;
+  householdId: number;
+  name: string;
+  species: string;
+  breed: string | null;
+  color: string | null;
+  sex: AnimalSex;
+  birthDate: string | null;
+  sterilized: boolean;
+  microchipNumber: string | null;
+  currentWeightKg: number | null;
+  photoUrl: string | null;
+  age: { years: number; months: number } | null;
+}
+
+export interface MedicalProfile {
+  animalId: number;
+  chronicConditions: string | null;
+  allergies: string | null;
+  dietaryNeeds: string | null;
+  behavioralNotes: string | null;
+  bloodType: string | null;
+  insuranceProvider: string | null;
+  insurancePolicyNumber: string | null;
+  insuranceCoverageLimit: number | null;
+  insuranceDeductible: number | null;
+  referringVetName: string | null;
+  referringVetPhone: string | null;
+}
+
+export type HealthEntryType =
+  | 'vaccin'
+  | 'vermifuge'
+  | 'rdv_veto'
+  | 'osteo'
+  | 'dentiste_equin'
+  | 'marechal'
+  | 'autre';
+
+export type HealthEntryStatus = 'prevu' | 'fait';
+
+export interface HealthEntry {
+  id: number;
+  animalId: number;
+  type: HealthEntryType;
+  customTypeLabel: string | null;
+  scheduledDate: string;
+  status: HealthEntryStatus;
+  report: string | null;
+  price: number | null;
+  nextReminderDate: string | null;
+}
+
+export interface CalendarEntry extends HealthEntry {
+  animalName: string;
+}
+
+export type DocumentCategory = 'ordonnance' | 'analyse' | 'certificat_vaccination' | 'autre';
+
+export interface DocumentRecord {
+  id: number;
+  householdId: number;
+  animalId: number | null;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  category: DocumentCategory;
+  createdAt: string;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
