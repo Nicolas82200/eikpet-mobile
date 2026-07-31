@@ -8,6 +8,7 @@ import type { Animal } from '../types/api';
 import SpeciesPicker from '../components/SpeciesPicker';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Animals'>;
 
@@ -19,18 +20,22 @@ export default function AnimalsScreen({ route, navigation }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
 
   const load = useCallback(() => {
-    api.listAnimals(householdId).then(setAnimals).catch(() => undefined);
+    api.listAnimals(householdId).then(setAnimals).catch(showLoadError);
   }, [householdId]);
 
   useFocusEffect(load);
 
   const onCreate = async () => {
     if (!name.trim() || !species.trim()) return;
-    await api.createAnimal(householdId, { name: name.trim(), species: species.trim() });
-    setName('');
-    setSpecies('');
-    setModalVisible(false);
-    load();
+    try {
+      await api.createAnimal(householdId, { name: name.trim(), species: species.trim() });
+      setName('');
+      setSpecies('');
+      setModalVisible(false);
+      load();
+    } catch (error) {
+      showError(error);
+    }
   };
 
   return (

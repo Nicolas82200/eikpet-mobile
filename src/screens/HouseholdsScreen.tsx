@@ -8,6 +8,7 @@ import type { Household } from '../types/api';
 import LogoutButton from '../components/LogoutButton';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Households'>;
 
@@ -21,17 +22,21 @@ export default function HouseholdsScreen({ navigation }: Props) {
   }, [navigation]);
 
   const load = useCallback(() => {
-    api.listHouseholds().then(setHouseholds).catch(() => undefined);
+    api.listHouseholds().then(setHouseholds).catch(showLoadError);
   }, []);
 
   useFocusEffect(load);
 
   const onCreate = async () => {
     if (!newHouseholdName.trim()) return;
-    await api.createHousehold(newHouseholdName.trim());
-    setNewHouseholdName('');
-    setModalVisible(false);
-    load();
+    try {
+      await api.createHousehold(newHouseholdName.trim());
+      setNewHouseholdName('');
+      setModalVisible(false);
+      load();
+    } catch (error) {
+      showError(error);
+    }
   };
 
   return (

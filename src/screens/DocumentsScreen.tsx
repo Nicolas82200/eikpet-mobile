@@ -9,6 +9,7 @@ import type { DocumentCategory, DocumentRecord } from '../types/api';
 import { DOCUMENT_CATEGORIES, getCategoryLabel } from '../data/documentCategories';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Documents'>;
 
@@ -24,18 +25,22 @@ export default function DocumentsScreen({ route }: Props) {
 
   const load = useCallback(() => {
     const request = animalId ? api.listDocumentsForAnimal(animalId) : api.listDocumentsForHousehold(householdId);
-    request.then(setDocuments).catch(() => undefined);
+    request.then(setDocuments).catch(showLoadError);
   }, [householdId, animalId]);
 
   useFocusEffect(load);
 
   const onPickFile = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
-    if (result.canceled || !result.assets?.[0]) {
-      return;
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
+      if (result.canceled || !result.assets?.[0]) {
+        return;
+      }
+      const asset = result.assets[0];
+      setPickedFile({ uri: asset.uri, name: asset.name, mimeType: asset.mimeType ?? 'application/octet-stream' });
+    } catch (error) {
+      showError(error, 'Selection du fichier impossible');
     }
-    const asset = result.assets[0];
-    setPickedFile({ uri: asset.uri, name: asset.name, mimeType: asset.mimeType ?? 'application/octet-stream' });
   };
 
   const onUpload = async () => {
@@ -52,6 +57,8 @@ export default function DocumentsScreen({ route }: Props) {
       setCategory('autre');
       setModalVisible(false);
       load();
+    } catch (error) {
+      showError(error, 'Envoi impossible');
     } finally {
       setUploading(false);
     }
@@ -64,8 +71,12 @@ export default function DocumentsScreen({ route }: Props) {
         text: 'Supprimer',
         style: 'destructive',
         onPress: async () => {
-          await api.deleteDocument(doc.id);
-          load();
+          try {
+            await api.deleteDocument(doc.id);
+            load();
+          } catch (error) {
+            showError(error);
+          }
         },
       },
     ]);

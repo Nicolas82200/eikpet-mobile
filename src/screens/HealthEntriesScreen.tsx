@@ -7,6 +7,7 @@ import * as api from '../api/endpoints';
 import type { HealthEntry, HealthEntryType } from '../types/api';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
 
@@ -20,22 +21,30 @@ export default function HealthEntriesScreen({ route }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
 
   const load = useCallback(() => {
-    api.listHealthEntries(animalId).then(setEntries).catch(() => undefined);
+    api.listHealthEntries(animalId).then(setEntries).catch(showLoadError);
   }, [animalId]);
 
   useFocusEffect(load);
 
   const onCreate = async () => {
     if (!scheduledDate) return;
-    await api.createHealthEntry(animalId, { type, scheduledDate });
-    setScheduledDate('');
-    setModalVisible(false);
-    load();
+    try {
+      await api.createHealthEntry(animalId, { type, scheduledDate });
+      setScheduledDate('');
+      setModalVisible(false);
+      load();
+    } catch (error) {
+      showError(error);
+    }
   };
 
   const onMarkDone = async (entry: HealthEntry) => {
-    await api.updateHealthEntry(animalId, entry.id, { status: 'fait' });
-    load();
+    try {
+      await api.updateHealthEntry(animalId, entry.id, { status: 'fait' });
+      load();
+    } catch (error) {
+      showError(error);
+    }
   };
 
   const onDelete = (entry: HealthEntry) => {
@@ -45,8 +54,12 @@ export default function HealthEntriesScreen({ route }: Props) {
         text: 'Supprimer',
         style: 'destructive',
         onPress: async () => {
-          await api.deleteHealthEntry(animalId, entry.id);
-          load();
+          try {
+            await api.deleteHealthEntry(animalId, entry.id);
+            load();
+          } catch (error) {
+            showError(error);
+          }
         },
       },
     ]);

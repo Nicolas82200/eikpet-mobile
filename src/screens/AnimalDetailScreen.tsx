@@ -9,6 +9,7 @@ import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AutocompleteInput from '../components/AutocompleteInput';
 import { getBreedsForSpecies } from '../data/breeds';
 import { getColorsForSpecies } from '../data/colors';
+import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AnimalDetail'>;
 
@@ -31,7 +32,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
         setAnimal(a);
         setForm(a);
       })
-      .catch(() => undefined);
+      .catch(showLoadError);
   }, [animalId]);
 
   useFocusEffect(load);
@@ -51,6 +52,8 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
       });
       setAnimal(updated);
       navigation.setOptions({ title: updated.name });
+    } catch (error) {
+      showError(error);
     } finally {
       setSaving(false);
     }
@@ -63,8 +66,12 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
         text: 'Supprimer',
         style: 'destructive',
         onPress: async () => {
-          await api.deleteAnimal(animalId);
-          navigation.goBack();
+          try {
+            await api.deleteAnimal(animalId);
+            navigation.goBack();
+          } catch (error) {
+            showError(error);
+          }
         },
       },
     ]);

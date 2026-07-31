@@ -8,6 +8,7 @@ import type { MedicalProfile, SurgicalHistoryEntry, Treatment } from '../types/a
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MedicalProfile'>;
 
@@ -42,9 +43,9 @@ export default function MedicalProfileScreen({ route }: Props) {
     api
       .getMedicalProfile(animalId)
       .then((p) => setProfile(p ?? {}))
-      .catch(() => undefined);
-    api.listTreatments(animalId).then(setTreatments).catch(() => undefined);
-    api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(() => undefined);
+      .catch(showLoadError);
+    api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
+    api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(showLoadError);
   }, [animalId]);
 
   useFocusEffect(load);
@@ -53,6 +54,8 @@ export default function MedicalProfileScreen({ route }: Props) {
     setSaving(true);
     try {
       await api.upsertMedicalProfile(animalId, profile);
+    } catch (error) {
+      showError(error);
     } finally {
       setSaving(false);
     }
@@ -60,11 +63,15 @@ export default function MedicalProfileScreen({ route }: Props) {
 
   const onAddTreatment = async () => {
     if (!treatmentName.trim()) return;
-    await api.createTreatment(animalId, { name: treatmentName.trim(), dosage: treatmentDosage || null });
-    setTreatmentName('');
-    setTreatmentDosage('');
-    setTreatmentModalVisible(false);
-    api.listTreatments(animalId).then(setTreatments);
+    try {
+      await api.createTreatment(animalId, { name: treatmentName.trim(), dosage: treatmentDosage || null });
+      setTreatmentName('');
+      setTreatmentDosage('');
+      setTreatmentModalVisible(false);
+      api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
+    } catch (error) {
+      showError(error);
+    }
   };
 
   const onDeleteTreatment = (treatment: Treatment) => {
@@ -74,8 +81,12 @@ export default function MedicalProfileScreen({ route }: Props) {
         text: 'Supprimer',
         style: 'destructive',
         onPress: async () => {
-          await api.deleteTreatment(animalId, treatment.id);
-          api.listTreatments(animalId).then(setTreatments);
+          try {
+            await api.deleteTreatment(animalId, treatment.id);
+            api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
+          } catch (error) {
+            showError(error);
+          }
         },
       },
     ]);
@@ -83,11 +94,15 @@ export default function MedicalProfileScreen({ route }: Props) {
 
   const onAddSurgicalHistory = async () => {
     if (!procedureName.trim()) return;
-    await api.createSurgicalHistory(animalId, { procedureName: procedureName.trim(), performedOn: performedOn || null });
-    setProcedureName('');
-    setPerformedOn('');
-    setSurgicalModalVisible(false);
-    api.listSurgicalHistory(animalId).then(setSurgicalHistory);
+    try {
+      await api.createSurgicalHistory(animalId, { procedureName: procedureName.trim(), performedOn: performedOn || null });
+      setProcedureName('');
+      setPerformedOn('');
+      setSurgicalModalVisible(false);
+      api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(showLoadError);
+    } catch (error) {
+      showError(error);
+    }
   };
 
   const onDeleteSurgicalHistory = (entry: SurgicalHistoryEntry) => {
@@ -97,8 +112,12 @@ export default function MedicalProfileScreen({ route }: Props) {
         text: 'Supprimer',
         style: 'destructive',
         onPress: async () => {
-          await api.deleteSurgicalHistory(animalId, entry.id);
-          api.listSurgicalHistory(animalId).then(setSurgicalHistory);
+          try {
+            await api.deleteSurgicalHistory(animalId, entry.id);
+            api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(showLoadError);
+          } catch (error) {
+            showError(error);
+          }
         },
       },
     ]);

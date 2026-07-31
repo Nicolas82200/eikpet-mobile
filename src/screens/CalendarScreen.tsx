@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { CalendarEntry } from '../types/api';
+import { showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Calendar'>;
 
@@ -14,7 +15,7 @@ export default function CalendarScreen({ route }: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      api.listUpcomingReminders(householdId).then(setEntries).catch(() => undefined);
+      api.listUpcomingReminders(householdId).then(setEntries).catch(showLoadError);
     }, [householdId]),
   );
 
