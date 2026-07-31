@@ -1,5 +1,7 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import { apiRequest, apiUpload } from './client';
-import { saveTokens, clearTokens } from '../auth/token-storage';
+import { API_BASE_URL } from './config';
+import { saveTokens, clearTokens, getAccessToken } from '../auth/token-storage';
 import { getRefreshToken } from '../auth/token-storage';
 import type {
   Animal,
@@ -190,4 +192,14 @@ export async function uploadDocument(
 
 export function deleteDocument(documentId: number): Promise<void> {
   return apiRequest(`/documents/${documentId}`, { method: 'DELETE' });
+}
+
+/** Telecharge le fichier dans le cache local et renvoie son URI (pour ouverture/partage). */
+export async function downloadDocumentToCache(document: DocumentRecord): Promise<string> {
+  const token = await getAccessToken();
+  const localUri = `${FileSystem.cacheDirectory}${document.fileName}`;
+  const result = await FileSystem.downloadAsync(`${API_BASE_URL}/documents/${document.id}/file`, localUri, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  return result.uri;
 }
