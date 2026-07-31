@@ -59,6 +59,17 @@ export default function HouseholdsScreen({ navigation }: Props) {
           >
             <Text style={styles.cardTitle}>{item.name}</Text>
             <Text style={styles.cardSubtitle}>Code d'invitation : {item.inviteCode}</Text>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate('HouseholdMembers', {
+                  householdId: item.id,
+                  householdName: item.name,
+                  inviteCode: item.inviteCode,
+                })
+              }
+            >
+              <Text style={styles.membersLink}>Gerer les membres</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucun foyer pour l'instant</Text>}
@@ -88,6 +99,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 18, fontWeight: '600' },
   cardSubtitle: { color: '#666', marginTop: 4 },
+  membersLink: { color: '#2f6f4f', fontWeight: '600', marginTop: 8 },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
   addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },

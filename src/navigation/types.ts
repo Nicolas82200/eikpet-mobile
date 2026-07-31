@@ -12,4 +12,5 @@ export type AppStackParamList = {
   Calendar: { householdId: number; householdName: string };
   Documents: { householdId: number; animalId?: number };
   AppointmentFollowUp: { animalId: number; entryId: number };
+  HouseholdMembers: { householdId: number; householdName: string; inviteCode: string };
 };

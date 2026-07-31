@@ -16,6 +16,7 @@ import HealthEntriesScreen from '../screens/HealthEntriesScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import AppointmentFollowUpScreen from '../screens/AppointmentFollowUpScreen';
+import HouseholdMembersScreen from '../screens/HouseholdMembersScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -74,6 +75,11 @@ function AppNavigator() {
         name="AppointmentFollowUp"
         component={AppointmentFollowUpScreen}
         options={{ title: 'Suivi du rendez-vous' }}
+      />
+      <AppStack.Screen
+        name="HouseholdMembers"
+        component={HouseholdMembersScreen}
+        options={{ title: 'Membres du foyer' }}
       />
     </AppStack.Navigator>
   );

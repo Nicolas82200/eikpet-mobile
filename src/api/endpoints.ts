@@ -66,6 +66,10 @@ export function listHouseholdMembers(householdId: number): Promise<HouseholdMemb
   return apiRequest(`/households/${householdId}/members`);
 }
 
+export function regenerateInviteCode(householdId: number): Promise<{ inviteCode: string }> {
+  return apiRequest(`/households/${householdId}/invite-code/regenerate`, { method: 'POST' });
+}
+
 // --- Animaux ---
 
 export function listAnimals(householdId: number): Promise<Animal[]> {
