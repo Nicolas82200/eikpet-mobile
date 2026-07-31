@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -9,6 +9,7 @@ import SpeciesPicker from '../components/SpeciesPicker';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AuthenticatedImage from '../components/AuthenticatedImage';
+import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Animals'>;
@@ -21,10 +22,11 @@ export default function AnimalsScreen({ route, navigation }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
 
   const load = useCallback(() => {
-    api.listAnimals(householdId).then(setAnimals).catch(showLoadError);
+    return api.listAnimals(householdId).then(setAnimals).catch(showLoadError);
   }, [householdId]);
+  const { refreshing, trigger, onRefresh } = useRefreshable(load);
 
-  useFocusEffect(load);
+  useFocusEffect(trigger);
 
   const onCreate = async () => {
     if (!name.trim() || !species.trim()) return;
@@ -46,6 +48,7 @@ export default function AnimalsScreen({ route, navigation }: Props) {
         contentContainerStyle={styles.content}
         data={animals}
         keyExtractor={(item) => String(item.id)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
             <View style={styles.titleRow}>

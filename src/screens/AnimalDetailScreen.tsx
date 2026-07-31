@@ -10,6 +10,7 @@ import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AutocompleteInput from '../components/AutocompleteInput';
 import DatePickerInput from '../components/DatePickerInput';
 import AuthenticatedImage from '../components/AuthenticatedImage';
+import LoadingScreen from '../components/LoadingScreen';
 import { getBreedsForSpecies } from '../data/breeds';
 import { getColorsForSpecies } from '../data/colors';
 import { showError, showLoadError } from '../utils/errorHandling';
@@ -113,7 +114,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
   };
 
   if (!animal) {
-    return null;
+    return <LoadingScreen />;
   }
 
   return (

@@ -6,6 +6,7 @@ import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { Animal, HealthEntry } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
+import LoadingScreen from '../components/LoadingScreen';
 import { cancelAppointmentFollowUp } from '../notifications/localReminders';
 import { showError, showLoadError } from '../utils/errorHandling';
 import { formatTime } from '../utils/formatting';
@@ -53,7 +54,7 @@ export default function AppointmentFollowUpScreen({ route, navigation }: Props) 
   };
 
   if (!animal) {
-    return null;
+    return <LoadingScreen />;
   }
 
   return (

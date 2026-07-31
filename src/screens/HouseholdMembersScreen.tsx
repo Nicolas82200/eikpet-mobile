@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { HouseholdMember } from '../types/api';
+import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HouseholdMembers'>;
@@ -17,10 +18,11 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
   const [regenerating, setRegenerating] = useState(false);
 
   const load = useCallback(() => {
-    api.listHouseholdMembers(householdId).then(setMembers).catch(showLoadError);
+    return api.listHouseholdMembers(householdId).then(setMembers).catch(showLoadError);
   }, [householdId]);
+  const { refreshing, trigger, onRefresh } = useRefreshable(load);
 
-  useFocusEffect(load);
+  useFocusEffect(trigger);
 
   const onCopyCode = async () => {
     await Clipboard.setStringAsync(inviteCode);
@@ -59,6 +61,7 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
       contentContainerStyle={styles.content}
       data={members}
       keyExtractor={(item) => String(item.id)}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ListHeaderComponent={
         <>
           <Text style={styles.title}>{householdName}</Text>

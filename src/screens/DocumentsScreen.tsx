@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
@@ -10,6 +10,7 @@ import type { DocumentCategory, DocumentRecord } from '../types/api';
 import { DOCUMENT_CATEGORIES, getCategoryLabel } from '../data/documentCategories';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Documents'>;
@@ -27,10 +28,11 @@ export default function DocumentsScreen({ route }: Props) {
 
   const load = useCallback(() => {
     const request = animalId ? api.listDocumentsForAnimal(animalId) : api.listDocumentsForHousehold(householdId);
-    request.then(setDocuments).catch(showLoadError);
+    return request.then(setDocuments).catch(showLoadError);
   }, [householdId, animalId]);
+  const { refreshing, trigger, onRefresh } = useRefreshable(load);
 
-  useFocusEffect(load);
+  useFocusEffect(trigger);
 
   const onPickFile = async () => {
     try {
@@ -108,6 +110,7 @@ export default function DocumentsScreen({ route }: Props) {
         contentContainerStyle={styles.content}
         data={documents}
         keyExtractor={(item) => String(item.id)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={styles.titleRow}>
             <Text style={styles.title}>Documents</Text>

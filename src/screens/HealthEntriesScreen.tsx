@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -14,6 +14,7 @@ import RecurrencePicker from '../components/RecurrencePicker';
 import { getVaccinesForSpecies } from '../data/vaccines';
 import { getDewormersForSpecies } from '../data/dewormers';
 import { scheduleAppointmentFollowUp, cancelAppointmentFollowUp } from '../notifications/localReminders';
+import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
 import { formatTime } from '../utils/formatting';
 
@@ -37,11 +38,17 @@ export default function HealthEntriesScreen({ route }: Props) {
   const [recurrenceMonths, setRecurrenceMonths] = useState<number | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const load = useCallback(() => {
-    api.listHealthEntries(animalId).then(setEntries).catch(showLoadError);
-  }, [animalId]);
+  const [reportEntry, setReportEntry] = useState<HealthEntry | null>(null);
+  const [report, setReport] = useState('');
+  const [price, setPrice] = useState('');
+  const [savingReport, setSavingReport] = useState(false);
 
-  useFocusEffect(load);
+  const load = useCallback(() => {
+    return api.listHealthEntries(animalId).then(setEntries).catch(showLoadError);
+  }, [animalId]);
+  const { refreshing, trigger, onRefresh } = useRefreshable(load);
+
+  useFocusEffect(trigger);
 
   const onCreate = async () => {
     if (!scheduledDate) return;
@@ -83,6 +90,29 @@ export default function HealthEntriesScreen({ route }: Props) {
     }
   };
 
+  const openReportModal = (entry: HealthEntry) => {
+    setReportEntry(entry);
+    setReport(entry.report ?? '');
+    setPrice(entry.price != null ? String(entry.price) : '');
+  };
+
+  const onSaveReport = async () => {
+    if (!reportEntry) return;
+    setSavingReport(true);
+    try {
+      await api.updateHealthEntry(animalId, reportEntry.id, {
+        report: report.trim() || undefined,
+        price: price ? parseFloat(price) : undefined,
+      });
+      setReportEntry(null);
+      load();
+    } catch (error) {
+      showError(error);
+    } finally {
+      setSavingReport(false);
+    }
+  };
+
   const onDelete = (entry: HealthEntry) => {
     Alert.alert('Supprimer cette entree ?', undefined, [
       { text: 'Annuler', style: 'cancel' },
@@ -109,6 +139,7 @@ export default function HealthEntriesScreen({ route }: Props) {
         contentContainerStyle={styles.content}
         data={entries}
         keyExtractor={(item) => String(item.id)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={styles.titleRow}>
             <Text style={styles.title}>Carnet de sante — {animalName}</Text>
@@ -124,12 +155,16 @@ export default function HealthEntriesScreen({ route }: Props) {
               {item.status === 'fait' ? 'Fait' : 'Prevu'}
             </Text>
             {item.nextReminderDate && <Text style={styles.cardSubtitle}>Prochain rappel : {item.nextReminderDate}</Text>}
+            {item.report && <Text style={styles.cardReport}>{item.report}</Text>}
             <View style={styles.cardActions}>
               {item.status !== 'fait' && (
                 <TouchableOpacity onPress={() => onMarkDone(item)}>
                   <Text style={styles.cardActionText}>Marquer fait</Text>
                 </TouchableOpacity>
               )}
+              <TouchableOpacity onPress={() => openReportModal(item)}>
+                <Text style={styles.cardActionText}>{item.report ? 'Modifier le compte-rendu' : 'Compte-rendu'}</Text>
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => onDelete(item)}>
                 <Text style={styles.cardActionTextDanger}>Supprimer</Text>
               </TouchableOpacity>
@@ -165,6 +200,27 @@ export default function HealthEntriesScreen({ route }: Props) {
           <Text style={styles.addButtonText}>Ajouter</Text>
         </TouchableOpacity>
       </AddModal>
+
+      <AddModal visible={!!reportEntry} title="Compte-rendu" onClose={() => setReportEntry(null)}>
+        <TextInput
+          style={[styles.input, styles.multiline]}
+          placeholder="Notes sur le rendez-vous..."
+          value={report}
+          onChangeText={setReport}
+          multiline
+          autoFocus
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Prix (optionnel)"
+          keyboardType="decimal-pad"
+          value={price}
+          onChangeText={setPrice}
+        />
+        <TouchableOpacity style={styles.addButton} onPress={onSaveReport} disabled={savingReport}>
+          <Text style={styles.addButtonText}>{savingReport ? 'Enregistrement...' : 'Enregistrer'}</Text>
+        </TouchableOpacity>
+      </AddModal>
     </>
   );
 }
@@ -177,7 +233,8 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '600', textTransform: 'capitalize' },
   cardSubtitle: { color: '#666', marginTop: 4 },
-  cardActions: { flexDirection: 'row', gap: 16, marginTop: 10 },
+  cardReport: { color: '#333', marginTop: 6, fontStyle: 'italic' },
+  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 10 },
   cardActionText: { color: '#2f6f4f', fontWeight: '600' },
   cardActionTextDanger: { color: '#a33', fontWeight: '600' },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
@@ -187,6 +244,7 @@ const styles = StyleSheet.create({
   typeChipText: { color: '#333' },
   typeChipTextActive: { color: 'white' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
+  multiline: { minHeight: 80, textAlignVertical: 'top' },
   addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });

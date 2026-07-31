@@ -1,5 +1,5 @@
 import React, { useCallback, useLayoutEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -8,6 +8,7 @@ import type { Household } from '../types/api';
 import LogoutButton from '../components/LogoutButton';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Households'>;
@@ -27,10 +28,11 @@ export default function HouseholdsScreen({ navigation }: Props) {
   }, [navigation]);
 
   const load = useCallback(() => {
-    api.listHouseholds().then(setHouseholds).catch(showLoadError);
+    return api.listHouseholds().then(setHouseholds).catch(showLoadError);
   }, []);
+  const { refreshing, trigger, onRefresh } = useRefreshable(load);
 
-  useFocusEffect(load);
+  useFocusEffect(trigger);
 
   const onCreate = async () => {
     if (!newHouseholdName.trim()) return;
@@ -69,6 +71,7 @@ export default function HouseholdsScreen({ navigation }: Props) {
         contentContainerStyle={styles.content}
         data={households}
         keyExtractor={(item) => String(item.id)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={styles.titleRow}>
             <Text style={styles.title}>Mes foyers</Text>
