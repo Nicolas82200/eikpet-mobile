@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { MedicalProfile } from '../types/api';
+import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MedicalProfile'>;
 
@@ -44,7 +45,8 @@ export default function MedicalProfileScreen({ route }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingScreen>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Fiche medicale — {animalName}</Text>
       {FIELDS.map((field) => (
         <View key={field.key} style={styles.fieldGroup}>
@@ -59,7 +61,8 @@ export default function MedicalProfileScreen({ route }: Props) {
       <TouchableOpacity style={styles.button} onPress={onSave} disabled={saving}>
         <Text style={styles.buttonText}>{saving ? 'Enregistrement...' : 'Enregistrer'}</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingScreen>
   );
 }
 

@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { HealthEntry, HealthEntryType } from '../types/api';
+import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
 
@@ -30,11 +31,43 @@ export default function HealthEntriesScreen({ route }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen>
       <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
         data={entries}
         keyExtractor={(item) => String(item.id)}
-        ListHeaderComponent={<Text style={styles.title}>Carnet de sante — {animalName}</Text>}
+        ListHeaderComponent={
+          <>
+            <Text style={styles.title}>Carnet de sante — {animalName}</Text>
+            <View style={styles.form}>
+              <Text style={styles.formTitle}>Ajouter une entree</Text>
+              <View style={styles.typeRow}>
+                {TYPES.map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.typeChip, t === type && styles.typeChipActive]}
+                    onPress={() => setType(t)}
+                  >
+                    <Text style={t === type ? styles.typeChipTextActive : styles.typeChipText}>{t}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.newEntryRow}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Date (AAAA-MM-JJ)"
+                  value={scheduledDate}
+                  onChangeText={setScheduledDate}
+                />
+                <TouchableOpacity style={styles.addButton} onPress={onCreate}>
+                  <Text style={styles.addButtonText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </>
+        }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{item.customTypeLabel ?? item.type}</Text>
@@ -46,40 +79,21 @@ export default function HealthEntriesScreen({ route }: Props) {
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l'instant</Text>}
       />
-      <View style={styles.typeRow}>
-        {TYPES.map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.typeChip, t === type && styles.typeChipActive]}
-            onPress={() => setType(t)}
-          >
-            <Text style={t === type ? styles.typeChipTextActive : styles.typeChipText}>{t}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <View style={styles.newEntryRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Date (AAAA-MM-JJ)"
-          value={scheduledDate}
-          onChangeText={setScheduledDate}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1 },
+  content: { padding: 16 },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
+  form: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 20, gap: 10 },
+  formTitle: { fontSize: 16, fontWeight: '600' },
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '600', textTransform: 'capitalize' },
   cardSubtitle: { color: '#666', marginTop: 4 },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   typeChip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
   typeChipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
   typeChipText: { color: '#333' },

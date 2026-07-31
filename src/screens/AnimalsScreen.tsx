@@ -5,6 +5,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { Animal } from '../types/api';
+import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
+import SpeciesPicker from '../components/SpeciesPicker';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Animals'>;
 
@@ -29,10 +31,13 @@ export default function AnimalsScreen({ route, navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen>
       <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.content}
         data={animals}
         keyExtractor={(item) => String(item.id)}
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <>
             <Text style={styles.title}>{householdName}</Text>
@@ -42,6 +47,17 @@ export default function AnimalsScreen({ route, navigation }: Props) {
             >
               <Text style={styles.calendarLinkText}>Voir le calendrier des rappels</Text>
             </TouchableOpacity>
+
+            <View style={styles.form}>
+              <Text style={styles.formTitle}>Ajouter un animal</Text>
+              <TextInput style={styles.input} placeholder="Nom" value={name} onChangeText={setName} />
+              <SpeciesPicker value={species} onChange={setSpecies} />
+              <TouchableOpacity style={styles.addButton} onPress={onCreate}>
+                <Text style={styles.addButtonText}>Ajouter</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.listTitle}>Mes animaux</Text>
           </>
         }
         renderItem={({ item }) => (
@@ -60,28 +76,24 @@ export default function AnimalsScreen({ route, navigation }: Props) {
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucun animal pour l'instant</Text>}
       />
-      <View style={styles.newAnimalRow}>
-        <TextInput style={styles.input} placeholder="Nom" value={name} onChangeText={setName} />
-        <TextInput style={styles.input} placeholder="Espece" value={species} onChangeText={setSpecies} />
-        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1 },
+  content: { padding: 16 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
   calendarLink: { marginBottom: 16 },
   calendarLinkText: { color: '#2f6f4f', fontWeight: '600' },
+  form: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 20, gap: 10 },
+  formTitle: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
+  listTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8, color: '#666' },
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 18, fontWeight: '600' },
   cardSubtitle: { color: '#666', marginTop: 4 },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
-  newAnimalRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, paddingHorizontal: 20, justifyContent: 'center' },
-  addButtonText: { color: 'white', fontSize: 20, fontWeight: 'bold' },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
+  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 12, marginTop: 4 },
+  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });
