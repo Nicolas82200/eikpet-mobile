@@ -73,6 +73,42 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
     }
   };
 
+  const onRemoveMember = (member: HouseholdMember) => {
+    Alert.alert('Retirer ce membre ?', `${member.firstName} ${member.lastName} n'aura plus acces a ce foyer.`, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Retirer',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.removeMember(householdId, member.id);
+            load();
+          } catch (error) {
+            showError(error);
+          }
+        },
+      },
+    ]);
+  };
+
+  const onLeave = () => {
+    Alert.alert('Quitter ce foyer ?', 'Tu perdras l\'acces aux animaux de ce foyer.', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Quitter',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.leaveHousehold(householdId);
+            navigation.goBack();
+          } catch (error) {
+            showError(error);
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <FlatList
       style={styles.container}
@@ -128,8 +164,20 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
           <Text style={styles.cardSubtitle}>
             {item.email} — {item.role === 'owner' ? 'Proprietaire' : 'Membre'}
           </Text>
+          {isOwner && item.role !== 'owner' && (
+            <TouchableOpacity onPress={() => onRemoveMember(item)}>
+              <Text style={styles.removeLink}>Retirer du foyer</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
+      ListFooterComponent={
+        !isOwner ? (
+          <TouchableOpacity style={styles.leaveButton} onPress={onLeave}>
+            <Text style={styles.leaveButtonText}>Quitter ce foyer</Text>
+          </TouchableOpacity>
+        ) : null
+      }
       ListEmptyComponent={<Text style={styles.empty}>Aucun membre</Text>}
     />
   );
@@ -171,5 +219,8 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '600' },
   cardSubtitle: { color: '#666', marginTop: 4 },
+  removeLink: { color: '#a33', fontWeight: '600', marginTop: 8 },
+  leaveButton: { padding: 12, marginTop: 8, marginBottom: 24 },
+  leaveButtonText: { color: '#a33', textAlign: 'center', fontWeight: '600' },
   empty: { color: '#666', textAlign: 'center', marginTop: 24 },
 });

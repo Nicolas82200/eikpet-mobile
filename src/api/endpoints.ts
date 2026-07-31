@@ -78,6 +78,14 @@ export function joinHousehold(inviteCode: string): Promise<Household> {
   return apiRequest('/auth/households/join', { method: 'POST', body: { inviteCode } });
 }
 
+export function removeMember(householdId: number, userId: number): Promise<void> {
+  return apiRequest(`/households/${householdId}/members/${userId}`, { method: 'DELETE' });
+}
+
+export function leaveHousehold(householdId: number): Promise<void> {
+  return apiRequest(`/households/${householdId}/leave`, { method: 'POST' });
+}
+
 // --- Animaux ---
 
 export function listAnimals(householdId: number): Promise<Animal[]> {
