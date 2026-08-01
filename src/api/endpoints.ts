@@ -1,5 +1,7 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import { apiRequest, apiUpload } from './client';
-import { saveTokens, clearTokens } from '../auth/token-storage';
+import { API_BASE_URL } from './config';
+import { saveTokens, clearTokens, getAccessToken } from '../auth/token-storage';
 import { getRefreshToken } from '../auth/token-storage';
 import type {
   Animal,
@@ -50,6 +52,26 @@ export async function logout(): Promise<void> {
   await clearTokens();
 }
 
+export function forgotPassword(email: string): Promise<void> {
+  return apiRequest('/auth/password/forgot', { method: 'POST', body: { email }, authenticated: false });
+}
+
+export function resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+  return apiRequest('/auth/password/reset', {
+    method: 'POST',
+    body: { email, code, newPassword },
+    authenticated: false,
+  });
+}
+
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return apiRequest('/auth/password', { method: 'PATCH', body: { currentPassword, newPassword } });
+}
+
+export function deleteAccount(password: string): Promise<void> {
+  return apiRequest('/auth/account', { method: 'DELETE', body: { password } });
+}
+
 // --- Foyers ---
 
 export function listHouseholds(): Promise<(Household & { role: 'owner' | 'member' })[]> {
@@ -62,6 +84,30 @@ export function createHousehold(name: string): Promise<Household> {
 
 export function listHouseholdMembers(householdId: number): Promise<HouseholdMember[]> {
   return apiRequest(`/households/${householdId}/members`);
+}
+
+export function regenerateInviteCode(householdId: number): Promise<{ inviteCode: string }> {
+  return apiRequest(`/households/${householdId}/invite-code/regenerate`, { method: 'POST' });
+}
+
+export function renameHousehold(householdId: number, name: string): Promise<Household> {
+  return apiRequest(`/households/${householdId}`, { method: 'PATCH', body: { name } });
+}
+
+export function joinHousehold(inviteCode: string): Promise<Household> {
+  return apiRequest('/auth/households/join', { method: 'POST', body: { inviteCode } });
+}
+
+export function removeMember(householdId: number, userId: number): Promise<void> {
+  return apiRequest(`/households/${householdId}/members/${userId}`, { method: 'DELETE' });
+}
+
+export function leaveHousehold(householdId: number): Promise<void> {
+  return apiRequest(`/households/${householdId}/leave`, { method: 'POST' });
+}
+
+export function deleteHousehold(householdId: number): Promise<void> {
+  return apiRequest(`/households/${householdId}`, { method: 'DELETE' });
 }
 
 // --- Animaux ---
@@ -84,6 +130,19 @@ export function updateAnimal(animalId: number, input: Partial<Animal>): Promise<
 
 export function deleteAnimal(animalId: number): Promise<void> {
   return apiRequest(`/animals/${animalId}`, { method: 'DELETE' });
+}
+
+export function getAnimalPhotoUrl(animalId: number): string {
+  return `${API_BASE_URL}/animals/${animalId}/photo`;
+}
+
+export async function uploadAnimalPhoto(
+  animalId: number,
+  file: { uri: string; name: string; type: string },
+): Promise<Animal> {
+  const formData = new FormData();
+  formData.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
+  return apiUpload(`/animals/${animalId}/photo`, formData);
 }
 
 // --- Fiche medicale ---
@@ -190,4 +249,14 @@ export async function uploadDocument(
 
 export function deleteDocument(documentId: number): Promise<void> {
   return apiRequest(`/documents/${documentId}`, { method: 'DELETE' });
+}
+
+/** Telecharge le fichier dans le cache local et renvoie son URI (pour ouverture/partage). */
+export async function downloadDocumentToCache(document: DocumentRecord): Promise<string> {
+  const token = await getAccessToken();
+  const localUri = `${FileSystem.cacheDirectory}${document.fileName}`;
+  const result = await FileSystem.downloadAsync(`${API_BASE_URL}/documents/${document.id}/file`, localUri, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  return result.uri;
 }

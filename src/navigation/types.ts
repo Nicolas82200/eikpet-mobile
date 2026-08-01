@@ -1,6 +1,8 @@
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { email: string };
 };
 
 export type AppStackParamList = {
@@ -11,4 +13,7 @@ export type AppStackParamList = {
   HealthEntries: { animalId: number; animalName: string; species: string };
   Calendar: { householdId: number; householdName: string };
   Documents: { householdId: number; animalId?: number };
+  AppointmentFollowUp: { animalId: number; entryId: number };
+  HouseholdMembers: { householdId: number; householdName: string; inviteCode: string; isOwner: boolean };
+  Account: undefined;
 };

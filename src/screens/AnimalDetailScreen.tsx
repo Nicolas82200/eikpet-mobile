@@ -1,14 +1,21 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
-import type { Animal, AnimalSex } from '../types/api';
+import type { Animal, AnimalSex, HealthEntry, MedicalProfile } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
+import Accordion from '../components/Accordion';
 import AutocompleteInput from '../components/AutocompleteInput';
+import DatePickerInput from '../components/DatePickerInput';
+import AuthenticatedImage from '../components/AuthenticatedImage';
+import LoadingScreen from '../components/LoadingScreen';
+import WarningBanner from '../components/WarningBanner';
 import { getBreedsForSpecies } from '../data/breeds';
 import { getColorsForSpecies } from '../data/colors';
+import { getAnimalWarnings } from '../utils/animalWarnings';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AnimalDetail'>;
@@ -24,6 +31,9 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [form, setForm] = useState<Partial<Animal>>({});
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [medicalProfile, setMedicalProfile] = useState<Partial<MedicalProfile> | null>(null);
+  const [healthEntries, setHealthEntries] = useState<HealthEntry[]>([]);
 
   const load = useCallback(() => {
     api
@@ -33,6 +43,8 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
         setForm(a);
       })
       .catch(showLoadError);
+    api.getMedicalProfile(animalId).then(setMedicalProfile).catch(() => setMedicalProfile(null));
+    api.listHealthEntries(animalId).then(setHealthEntries).catch(() => setHealthEntries([]));
   }, [animalId]);
 
   useFocusEffect(load);
@@ -59,6 +71,37 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
     }
   };
 
+  const onPickPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission refusee', "Autorise l'acces aux photos pour changer l'image de profil.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (result.canceled || !result.assets?.[0]) {
+      return;
+    }
+    const asset = result.assets[0];
+    setUploadingPhoto(true);
+    try {
+      const updated = await api.uploadAnimalPhoto(animalId, {
+        uri: asset.uri,
+        name: asset.fileName ?? 'photo.jpg',
+        type: asset.mimeType ?? 'image/jpeg',
+      });
+      setAnimal(updated);
+    } catch (error) {
+      showError(error, 'Envoi de la photo impossible');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const onDelete = () => {
     Alert.alert('Supprimer cet animal ?', 'Cette action est irreversible.', [
       { text: 'Annuler', style: 'cancel' },
@@ -78,15 +121,42 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
   };
 
   if (!animal) {
-    return null;
+    return <LoadingScreen />;
   }
+
+  const warnings = getAnimalWarnings(medicalProfile, healthEntries);
 
   return (
     <KeyboardAvoidingScreen>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>{animal.name}</Text>
+        <TouchableOpacity style={styles.photoContainer} onPress={onPickPhoto} disabled={uploadingPhoto}>
+          {animal.photoUrl ? (
+            <AuthenticatedImage
+              uri={`${api.getAnimalPhotoUrl(animal.id)}?v=${encodeURIComponent(animal.photoUrl)}`}
+              style={styles.photo}
+            />
+          ) : (
+            <View style={styles.photoPlaceholder}>
+              <Text style={styles.photoPlaceholderText}>Ajouter une photo</Text>
+            </View>
+          )}
+          {uploadingPhoto && <Text style={styles.photoUploading}>Envoi en cours...</Text>}
+        </TouchableOpacity>
 
-        <View style={styles.form}>
+        <Text style={styles.title}>{animal.name}</Text>
+        <Text style={styles.subtitle}>
+          {animal.species}
+          {animal.age ? ` — ${animal.age.years} an(s) ${animal.age.months} mois` : ''}
+        </Text>
+
+        <WarningBanner
+          warnings={warnings}
+          onPress={() =>
+            navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
+          }
+        />
+
+        <Accordion title="Profil" subtitle="Race, robe, sexe, naissance, puce, poids...">
           <Text style={styles.label}>Nom</Text>
           <TextInput style={styles.input} value={form.name ?? ''} onChangeText={(v) => setForm((f) => ({ ...f, name: v }))} />
 
@@ -119,11 +189,10 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
             ))}
           </View>
 
-          <Text style={styles.label}>Date de naissance (AAAA-MM-JJ)</Text>
-          <TextInput
-            style={styles.input}
+          <Text style={styles.label}>Date de naissance</Text>
+          <DatePickerInput
             value={form.birthDate?.slice(0, 10) ?? ''}
-            onChangeText={(v) => setForm((f) => ({ ...f, birthDate: v }))}
+            onChange={(v) => setForm((f) => ({ ...f, birthDate: v }))}
           />
 
           <View style={styles.switchRow}>
@@ -152,33 +221,38 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           <TouchableOpacity style={styles.saveButton} onPress={onSave} disabled={saving}>
             <Text style={styles.saveButtonText}>{saving ? 'Enregistrement...' : 'Enregistrer le profil'}</Text>
           </TouchableOpacity>
-        </View>
+        </Accordion>
 
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
-          }
-        >
-          <Text style={styles.cardTitle}>Fiche medicale</Text>
-          <Text style={styles.cardSubtitle}>Antecedents, allergies, traitements, assurance...</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate('HealthEntries', { animalId, animalName: animal.name, species: animal.species })
-          }
-        >
-          <Text style={styles.cardTitle}>Carnet de sante</Text>
-          <Text style={styles.cardSubtitle}>Vaccins, vermifuges, rdv veto...</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('Documents', { householdId, animalId })}
-        >
-          <Text style={styles.cardTitle}>Documents</Text>
-          <Text style={styles.cardSubtitle}>Ordonnances, analyses, certificats...</Text>
-        </TouchableOpacity>
+        <View style={styles.dashboardGrid}>
+          <TouchableOpacity
+            style={styles.dashboardTile}
+            onPress={() =>
+              navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
+            }
+          >
+            <Text style={styles.dashboardTileIcon}>🩺</Text>
+            <Text style={styles.dashboardTileTitle}>Fiche medicale</Text>
+            <Text style={styles.dashboardTileSubtitle}>Antecedents, allergies, traitements, assurance...</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dashboardTile}
+            onPress={() =>
+              navigation.navigate('HealthEntries', { animalId, animalName: animal.name, species: animal.species })
+            }
+          >
+            <Text style={styles.dashboardTileIcon}>📅</Text>
+            <Text style={styles.dashboardTileTitle}>Carnet de sante</Text>
+            <Text style={styles.dashboardTileSubtitle}>Vaccins, vermifuges, rdv veto...</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dashboardTile}
+            onPress={() => navigation.navigate('Documents', { householdId, animalId })}
+          >
+            <Text style={styles.dashboardTileIcon}>📄</Text>
+            <Text style={styles.dashboardTileTitle}>Documents</Text>
+            <Text style={styles.dashboardTileSubtitle}>Ordonnances, analyses, certificats...</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
           <Text style={styles.deleteButtonText}>Supprimer cet animal</Text>
@@ -190,21 +264,46 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
-  form: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 20 },
-  label: { color: '#666', marginBottom: 4, marginTop: 10 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, backgroundColor: 'white' },
+  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
+  subtitle: { color: '#8A7B68', textAlign: 'center', marginBottom: 16 },
+  photoContainer: { alignSelf: 'center', marginBottom: 12 },
+  photo: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#EDE3D0' },
+  photoPlaceholder: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: '#FAF6EF',
+    borderWidth: 1,
+    borderColor: '#E3D8C4',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoPlaceholderText: { color: '#8A7B68', textAlign: 'center', paddingHorizontal: 8 },
+  photoUploading: { textAlign: 'center', color: '#8A7B68', marginTop: 6 },
+  label: { color: '#8A7B68', marginBottom: 4, marginTop: 10 },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, backgroundColor: 'white' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 14 },
-  chipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
-  chipText: { color: '#333' },
+  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 14 },
+  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
+  chipText: { color: '#3A3226' },
   chipTextActive: { color: 'white', fontWeight: '600' },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  saveButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 12, marginTop: 16 },
+  saveButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 12, marginTop: 16 },
   saveButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 18, fontWeight: '600' },
-  cardSubtitle: { color: '#666', marginTop: 4 },
+  dashboardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 16 },
+  dashboardTile: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E3D8C4',
+  },
+  dashboardTileIcon: { fontSize: 22, marginBottom: 6 },
+  dashboardTileTitle: { fontSize: 16, fontWeight: '700', color: '#3A3226' },
+  dashboardTileSubtitle: { color: '#8A7B68', marginTop: 4, fontSize: 12 },
   deleteButton: { padding: 12, marginTop: 8, marginBottom: 32 },
-  deleteButtonText: { color: '#a33', textAlign: 'center', fontWeight: '600' },
+  deleteButtonText: { color: '#B3452C', textAlign: 'center', fontWeight: '600' },
 });

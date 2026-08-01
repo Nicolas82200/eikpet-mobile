@@ -52,16 +52,16 @@ export default function AutocompleteInput({ value, onChange, options, placeholde
 
 const styles = StyleSheet.create({
   wrapper: { marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, backgroundColor: 'white' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, backgroundColor: 'white' },
   suggestions: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#E3D8C4',
     borderTopWidth: 0,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
     backgroundColor: 'white',
     overflow: 'hidden',
   },
-  suggestionItem: { paddingVertical: 10, paddingHorizontal: 12, borderTopWidth: 1, borderTopColor: '#eee' },
-  suggestionText: { color: '#333' },
+  suggestionItem: { paddingVertical: 10, paddingHorizontal: 12, borderTopWidth: 1, borderTopColor: '#EDE3D0' },
+  suggestionText: { color: '#3A3226' },
 });

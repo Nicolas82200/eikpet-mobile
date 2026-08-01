@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -8,6 +8,8 @@ import type { Animal } from '../types/api';
 import SpeciesPicker from '../components/SpeciesPicker';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import AuthenticatedImage from '../components/AuthenticatedImage';
+import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Animals'>;
@@ -20,10 +22,11 @@ export default function AnimalsScreen({ route, navigation }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
 
   const load = useCallback(() => {
-    api.listAnimals(householdId).then(setAnimals).catch(showLoadError);
+    return api.listAnimals(householdId).then(setAnimals).catch(showLoadError);
   }, [householdId]);
+  const { refreshing, trigger, onRefresh } = useRefreshable(load);
 
-  useFocusEffect(load);
+  useFocusEffect(trigger);
 
   const onCreate = async () => {
     if (!name.trim() || !species.trim()) return;
@@ -44,7 +47,10 @@ export default function AnimalsScreen({ route, navigation }: Props) {
         style={styles.container}
         contentContainerStyle={styles.content}
         data={animals}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
         keyExtractor={(item) => String(item.id)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
             <View style={styles.titleRow}>
@@ -61,13 +67,23 @@ export default function AnimalsScreen({ route, navigation }: Props) {
         }
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.card}
+            style={styles.tile}
             onPress={() =>
               navigation.navigate('AnimalDetail', { animalId: item.id, animalName: item.name, householdId })
             }
           >
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text style={styles.cardSubtitle}>
+            {item.photoUrl ? (
+              <AuthenticatedImage
+                uri={`${api.getAnimalPhotoUrl(item.id)}?v=${encodeURIComponent(item.photoUrl)}`}
+                style={styles.tileImage}
+              />
+            ) : (
+              <View style={styles.tileImagePlaceholder} />
+            )}
+            <Text style={styles.tileTitle} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={styles.tileSubtitle} numberOfLines={1}>
               {item.species}
               {item.age ? ` — ${item.age.years} an(s) ${item.age.months} mois` : ''}
             </Text>
@@ -95,13 +111,33 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   title: { fontSize: 24, fontWeight: 'bold' },
   calendarLink: { marginBottom: 16 },
-  calendarLinkText: { color: '#2f6f4f', fontWeight: '600' },
-  card: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 18, fontWeight: '600' },
-  cardSubtitle: { color: '#666', marginTop: 4 },
-  empty: { color: '#666', textAlign: 'center', marginTop: 24 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
+  calendarLinkText: { color: '#B8863B', fontWeight: '600' },
+  row: { gap: 12 },
+  tile: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E3D8C4',
+  },
+  tileImage: { width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: '#EDE3D0', marginBottom: 10 },
+  tileImagePlaceholder: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    backgroundColor: '#FAF6EF',
+    borderWidth: 1,
+    borderColor: '#E3D8C4',
+    borderStyle: 'dashed',
+    marginBottom: 10,
+  },
+  tileTitle: { fontSize: 16, fontWeight: '700', color: '#3A3226' },
+  tileSubtitle: { color: '#8A7B68', marginTop: 2, fontSize: 12 },
+  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12 },
   speciesField: { marginBottom: 16 },
-  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },
+  addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });
