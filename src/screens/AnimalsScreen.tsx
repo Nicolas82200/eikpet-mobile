@@ -73,7 +73,10 @@ export default function AnimalsScreen({ route, navigation }: Props) {
             }
           >
             {item.photoUrl ? (
-              <AuthenticatedImage uri={api.getAnimalPhotoUrl(item.id)} style={styles.tileImage} />
+              <AuthenticatedImage
+                uri={`${api.getAnimalPhotoUrl(item.id)}?v=${encodeURIComponent(item.photoUrl)}`}
+                style={styles.tileImage}
+              />
             ) : (
               <View style={styles.tileImagePlaceholder} />
             )}

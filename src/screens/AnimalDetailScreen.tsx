@@ -131,7 +131,10 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <TouchableOpacity style={styles.photoContainer} onPress={onPickPhoto} disabled={uploadingPhoto}>
           {animal.photoUrl ? (
-            <AuthenticatedImage uri={api.getAnimalPhotoUrl(animal.id)} style={styles.photo} />
+            <AuthenticatedImage
+              uri={`${api.getAnimalPhotoUrl(animal.id)}?v=${encodeURIComponent(animal.photoUrl)}`}
+              style={styles.photo}
+            />
           ) : (
             <View style={styles.photoPlaceholder}>
               <Text style={styles.photoPlaceholderText}>Ajouter une photo</Text>
