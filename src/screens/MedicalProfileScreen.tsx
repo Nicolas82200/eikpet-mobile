@@ -8,7 +8,9 @@ import type { MedicalProfile, SurgicalHistoryEntry, Treatment } from '../types/a
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import Accordion from '../components/Accordion';
 import AutocompleteInput from '../components/AutocompleteInput';
+import NullableField from '../components/NullableField';
 import DatePickerInput from '../components/DatePickerInput';
 import { scheduleTreatmentReminders, cancelTreatmentReminders } from '../notifications/localReminders';
 import { getProceduresForSpecies } from '../data/procedures';
@@ -18,6 +20,8 @@ import { ALLERGY_SUGGESTIONS } from '../data/allergies';
 import { DIETARY_NEEDS_SUGGESTIONS } from '../data/diets';
 import { getBloodTypesForSpecies } from '../data/bloodTypes';
 import { INSURANCE_PROVIDERS } from '../data/insuranceProviders';
+import { NONE_LABELS } from '../data/medicalFieldDefaults';
+import { getFieldState } from '../utils/fieldState';
 import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MedicalProfile'>;
@@ -35,18 +39,6 @@ function todayIsoDate(): string {
   const day = String(now.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
-
-const FIELDS: { key: keyof MedicalProfile; label: string; options?: (species: string) => readonly string[] }[] = [
-  { key: 'chronicConditions', label: 'Maladies chroniques', options: getChronicConditionsForSpecies },
-  { key: 'allergies', label: 'Allergies', options: () => ALLERGY_SUGGESTIONS },
-  { key: 'dietaryNeeds', label: 'Regime alimentaire particulier', options: () => DIETARY_NEEDS_SUGGESTIONS },
-  { key: 'behavioralNotes', label: 'Notes comportementales' },
-  { key: 'bloodType', label: 'Groupe sanguin', options: getBloodTypesForSpecies },
-  { key: 'insuranceProvider', label: 'Assureur', options: () => INSURANCE_PROVIDERS },
-  { key: 'insurancePolicyNumber', label: "N° de contrat d'assurance" },
-  { key: 'referringVetName', label: 'Veto referent' },
-  { key: 'referringVetPhone', label: 'Telephone du veto referent' },
-];
 
 export default function MedicalProfileScreen({ route }: Props) {
   const { animalId, animalName, species } = route.params;
@@ -76,6 +68,10 @@ export default function MedicalProfileScreen({ route }: Props) {
   }, [animalId]);
 
   useFocusEffect(load);
+
+  const setField = (key: keyof MedicalProfile, value: string) => {
+    setProfile((prev) => ({ ...prev, [key]: value }));
+  };
 
   const onSave = async () => {
     setSaving(true);
@@ -185,64 +181,163 @@ export default function MedicalProfileScreen({ route }: Props) {
     ]);
   };
 
+  const antecedentsIncomplete =
+    getFieldState(profile.chronicConditions, NONE_LABELS.chronicConditions) === 'empty' ||
+    getFieldState(profile.allergies, NONE_LABELS.allergies) === 'empty' ||
+    getFieldState(profile.bloodType, NONE_LABELS.bloodType) === 'empty';
+
+  const insured = profile.insuranceProvider && profile.insuranceProvider !== NONE_LABELS.insuranceProvider;
+  const hasVet = profile.referringVetName && profile.referringVetName !== NONE_LABELS.referringVetName;
+
   return (
     <>
       <KeyboardAvoidingScreen>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Fiche medicale — {animalName}</Text>
 
-          {FIELDS.map((field) => (
-            <View key={field.key} style={styles.fieldGroup}>
-              <Text style={styles.label}>{field.label}</Text>
-              {field.options ? (
-                <AutocompleteInput
-                  value={(profile[field.key] as string) ?? ''}
-                  onChange={(text) => setProfile((prev) => ({ ...prev, [field.key]: text }))}
-                  options={field.options(species)}
-                />
-              ) : (
+          <Accordion title="Antecedents medicaux" subtitle="Maladies, allergies, regime, groupe sanguin" warning={antecedentsIncomplete}>
+            <Text style={styles.label}>Maladies chroniques</Text>
+            <NullableField
+              value={profile.chronicConditions ?? ''}
+              onChange={(v) => setField('chronicConditions', v)}
+              options={getChronicConditionsForSpecies(species)}
+              noneLabel={NONE_LABELS.chronicConditions}
+            />
+
+            <Text style={styles.label}>Allergies</Text>
+            <NullableField
+              value={profile.allergies ?? ''}
+              onChange={(v) => setField('allergies', v)}
+              options={ALLERGY_SUGGESTIONS}
+              noneLabel={NONE_LABELS.allergies}
+            />
+
+            <Text style={styles.label}>Regime alimentaire particulier</Text>
+            <NullableField
+              value={profile.dietaryNeeds ?? ''}
+              onChange={(v) => setField('dietaryNeeds', v)}
+              options={DIETARY_NEEDS_SUGGESTIONS}
+              noneLabel={NONE_LABELS.dietaryNeeds}
+            />
+
+            <Text style={styles.label}>Notes comportementales</Text>
+            <NullableField
+              value={profile.behavioralNotes ?? ''}
+              onChange={(v) => setField('behavioralNotes', v)}
+              options={[]}
+              noneLabel={NONE_LABELS.behavioralNotes}
+            />
+
+            <Text style={styles.label}>Groupe sanguin</Text>
+            <NullableField
+              value={profile.bloodType ?? ''}
+              onChange={(v) => setField('bloodType', v)}
+              options={getBloodTypesForSpecies(species)}
+              noneLabel={NONE_LABELS.bloodType}
+            />
+          </Accordion>
+
+          <Accordion title="Assurance" subtitle={insured ? String(profile.insuranceProvider) : 'Non renseigne'}>
+            <Text style={styles.label}>Assureur</Text>
+            <NullableField
+              value={profile.insuranceProvider ?? ''}
+              onChange={(v) => setField('insuranceProvider', v)}
+              options={INSURANCE_PROVIDERS}
+              noneLabel={NONE_LABELS.insuranceProvider}
+            />
+            {insured && (
+              <>
+                <Text style={styles.label}>N° de contrat</Text>
                 <TextInput
                   style={styles.input}
-                  value={(profile[field.key] as string) ?? ''}
-                  onChangeText={(text) => setProfile((prev) => ({ ...prev, [field.key]: text }))}
+                  value={profile.insurancePolicyNumber ?? ''}
+                  onChangeText={(v) => setField('insurancePolicyNumber', v)}
                 />
-              )}
-            </View>
-          ))}
+                <Text style={styles.label}>Plafond de remboursement (€)</Text>
+                <TextInput
+                  style={styles.input}
+                  keyboardType="decimal-pad"
+                  value={profile.insuranceCoverageLimit != null ? String(profile.insuranceCoverageLimit) : ''}
+                  onChangeText={(v) =>
+                    setProfile((prev) => ({ ...prev, insuranceCoverageLimit: v ? parseFloat(v) : undefined }))
+                  }
+                />
+                <Text style={styles.label}>Franchise (€)</Text>
+                <TextInput
+                  style={styles.input}
+                  keyboardType="decimal-pad"
+                  value={profile.insuranceDeductible != null ? String(profile.insuranceDeductible) : ''}
+                  onChangeText={(v) =>
+                    setProfile((prev) => ({ ...prev, insuranceDeductible: v ? parseFloat(v) : undefined }))
+                  }
+                />
+              </>
+            )}
+          </Accordion>
+
+          <Accordion title="Veterinaire referent" subtitle={hasVet ? String(profile.referringVetName) : 'Non renseigne'}>
+            <Text style={styles.label}>Nom</Text>
+            <NullableField
+              value={profile.referringVetName ?? ''}
+              onChange={(v) => setField('referringVetName', v)}
+              options={[]}
+              noneLabel={NONE_LABELS.referringVetName}
+            />
+            {hasVet && (
+              <>
+                <Text style={styles.label}>Telephone</Text>
+                <TextInput
+                  style={styles.input}
+                  keyboardType="phone-pad"
+                  value={profile.referringVetPhone ?? ''}
+                  onChangeText={(v) => setField('referringVetPhone', v)}
+                />
+              </>
+            )}
+          </Accordion>
+
           <TouchableOpacity style={styles.button} onPress={onSave} disabled={saving}>
-            <Text style={styles.buttonText}>{saving ? 'Enregistrement...' : 'Enregistrer'}</Text>
+            <Text style={styles.buttonText}>{saving ? 'Enregistrement...' : 'Enregistrer la fiche medicale'}</Text>
           </TouchableOpacity>
 
-          <View style={styles.sectionTitleRow}>
-            <Text style={styles.sectionTitle}>Traitements en cours</Text>
-            <AddIconButton onPress={() => setTreatmentModalVisible(true)} />
-          </View>
-          {treatments.map((t) => (
-            <View key={t.id} style={styles.listCard}>
-              <Text style={styles.listCardTitle}>{t.name}</Text>
-              {t.dosage && <Text style={styles.listCardSubtitle}>{t.dosage}</Text>}
-              {t.reminderTimes && <Text style={styles.listCardSubtitle}>Rappels : {t.reminderTimes}</Text>}
-              <TouchableOpacity onPress={() => onDeleteTreatment(t)}>
-                <Text style={styles.deleteLink}>Supprimer</Text>
-              </TouchableOpacity>
+          <Accordion
+            title="Traitements en cours"
+            subtitle={treatments.length > 0 ? `${treatments.length} en cours` : 'Aucun'}
+          >
+            <View style={styles.accordionAddRow}>
+              <AddIconButton onPress={() => setTreatmentModalVisible(true)} />
             </View>
-          ))}
-          {treatments.length === 0 && <Text style={styles.empty}>Aucun traitement en cours</Text>}
+            {treatments.map((t) => (
+              <View key={t.id} style={styles.listCard}>
+                <Text style={styles.listCardTitle}>{t.name}</Text>
+                {t.dosage && <Text style={styles.listCardSubtitle}>{t.dosage}</Text>}
+                {t.reminderTimes && <Text style={styles.listCardSubtitle}>Rappels : {t.reminderTimes}</Text>}
+                <TouchableOpacity onPress={() => onDeleteTreatment(t)}>
+                  <Text style={styles.deleteLink}>Supprimer</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            {treatments.length === 0 && <Text style={styles.empty}>Aucun traitement en cours</Text>}
+          </Accordion>
 
-          <View style={styles.sectionTitleRow}>
-            <Text style={styles.sectionTitle}>Antecedents chirurgicaux</Text>
-            <AddIconButton onPress={() => setSurgicalModalVisible(true)} />
-          </View>
-          {surgicalHistory.map((s) => (
-            <View key={s.id} style={styles.listCard}>
-              <Text style={styles.listCardTitle}>{s.procedureName}</Text>
-              {s.performedOn && <Text style={styles.listCardSubtitle}>{s.performedOn}</Text>}
-              <TouchableOpacity onPress={() => onDeleteSurgicalHistory(s)}>
-                <Text style={styles.deleteLink}>Supprimer</Text>
-              </TouchableOpacity>
+          <Accordion
+            title="Antecedents chirurgicaux"
+            subtitle={surgicalHistory.length > 0 ? `${surgicalHistory.length} enregistre(s)` : 'Aucun'}
+          >
+            <View style={styles.accordionAddRow}>
+              <AddIconButton onPress={() => setSurgicalModalVisible(true)} />
             </View>
-          ))}
-          {surgicalHistory.length === 0 && <Text style={styles.empty}>Aucun antecedent chirurgical</Text>}
+            {surgicalHistory.map((s) => (
+              <View key={s.id} style={styles.listCard}>
+                <Text style={styles.listCardTitle}>{s.procedureName}</Text>
+                {s.performedOn && <Text style={styles.listCardSubtitle}>{s.performedOn}</Text>}
+                <TouchableOpacity onPress={() => onDeleteSurgicalHistory(s)}>
+                  <Text style={styles.deleteLink}>Supprimer</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            {surgicalHistory.length === 0 && <Text style={styles.empty}>Aucun antecedent chirurgical</Text>}
+          </Accordion>
         </ScrollView>
       </KeyboardAvoidingScreen>
 
@@ -323,20 +418,12 @@ export default function MedicalProfileScreen({ route }: Props) {
 const styles = StyleSheet.create({
   container: { padding: 16 },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold' },
-  fieldGroup: { marginBottom: 12 },
-  label: { color: '#666', marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 8 },
-  button: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14, marginTop: 4 },
+  label: { color: '#666', marginBottom: 4, marginTop: 8 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: 'white' },
+  button: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14, marginVertical: 8 },
   buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  listCard: { backgroundColor: '#f2f2f2', borderRadius: 8, padding: 12, marginBottom: 8 },
+  accordionAddRow: { alignItems: 'flex-end', marginBottom: 8 },
+  listCard: { backgroundColor: 'white', borderRadius: 8, padding: 12, marginBottom: 8 },
   listCardTitle: { fontWeight: '600' },
   listCardSubtitle: { color: '#666', marginTop: 2 },
   deleteLink: { color: '#a33', fontWeight: '600', marginTop: 6 },
