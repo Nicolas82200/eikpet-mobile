@@ -68,6 +68,10 @@ export function changePassword(currentPassword: string, newPassword: string): Pr
   return apiRequest('/auth/password', { method: 'PATCH', body: { currentPassword, newPassword } });
 }
 
+export function deleteAccount(password: string): Promise<void> {
+  return apiRequest('/auth/account', { method: 'DELETE', body: { password } });
+}
+
 // --- Foyers ---
 
 export function listHouseholds(): Promise<(Household & { role: 'owner' | 'member' })[]> {
