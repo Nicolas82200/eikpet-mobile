@@ -6,6 +6,8 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    /** Code d'erreur metier renvoye par le backend (ex: 'PLAN_LIMIT_ANIMAL'), le cas echeant. */
+    public readonly errorCode?: string,
   ) {
     super(message);
   }
@@ -81,8 +83,15 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (!response.ok) {
-    const errorBody = await parseJsonBody<{ message?: string }>(response).catch(() => ({ message: undefined }));
-    throw new ApiError(response.status, errorBody?.message ?? response.statusText ?? 'Erreur inconnue');
+    const errorBody = await parseJsonBody<{ message?: string; errorCode?: string }>(response).catch(() => ({
+      message: undefined,
+      errorCode: undefined,
+    }));
+    throw new ApiError(
+      response.status,
+      errorBody?.message ?? response.statusText ?? 'Erreur inconnue',
+      errorBody?.errorCode,
+    );
   }
 
   if (response.status === 204) {
@@ -100,8 +109,15 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
     body: formData,
   });
   if (!response.ok) {
-    const errorBody = await parseJsonBody<{ message?: string }>(response).catch(() => ({ message: undefined }));
-    throw new ApiError(response.status, errorBody?.message ?? response.statusText ?? 'Erreur inconnue');
+    const errorBody = await parseJsonBody<{ message?: string; errorCode?: string }>(response).catch(() => ({
+      message: undefined,
+      errorCode: undefined,
+    }));
+    throw new ApiError(
+      response.status,
+      errorBody?.message ?? response.statusText ?? 'Erreur inconnue',
+      errorBody?.errorCode,
+    );
   }
   return parseJsonBody<T>(response);
 }

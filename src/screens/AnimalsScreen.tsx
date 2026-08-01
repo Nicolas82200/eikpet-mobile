@@ -10,7 +10,7 @@ import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AuthenticatedImage from '../components/AuthenticatedImage';
 import { useRefreshable } from '../hooks/useRefreshable';
-import { showError, showLoadError } from '../utils/errorHandling';
+import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Animals'>;
 
@@ -37,7 +37,12 @@ export default function AnimalsScreen({ route, navigation }: Props) {
       setModalVisible(false);
       load();
     } catch (error) {
-      showError(error);
+      if (isPlanLimitError(error)) {
+        setModalVisible(false);
+        navigation.navigate('Paywall');
+      } else {
+        showError(error);
+      }
     }
   };
 
