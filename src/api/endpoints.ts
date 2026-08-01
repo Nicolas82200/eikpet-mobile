@@ -102,6 +102,10 @@ export function leaveHousehold(householdId: number): Promise<void> {
   return apiRequest(`/households/${householdId}/leave`, { method: 'POST' });
 }
 
+export function deleteHousehold(householdId: number): Promise<void> {
+  return apiRequest(`/households/${householdId}`, { method: 'DELETE' });
+}
+
 // --- Animaux ---
 
 export function listAnimals(householdId: number): Promise<Animal[]> {

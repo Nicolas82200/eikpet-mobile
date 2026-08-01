@@ -19,6 +19,7 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
   const [members, setMembers] = useState<HouseholdMember[]>([]);
   const [regenerating, setRegenerating] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(() => {
     return api.listHouseholdMembers(householdId).then(setMembers).catch(showLoadError);
@@ -89,6 +90,40 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
         },
       },
     ]);
+  };
+
+  const onDeleteHousehold = () => {
+    Alert.alert(
+      'Supprimer definitivement ce foyer ?',
+      `Tous les animaux, fiches de sante et documents de "${householdName}" seront perdus. Cette action est irreversible.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Continuer',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Confirmer la suppression ?', 'Derniere confirmation avant suppression definitive.', [
+              { text: 'Annuler', style: 'cancel' },
+              {
+                text: 'Supprimer le foyer',
+                style: 'destructive',
+                onPress: async () => {
+                  setDeleting(true);
+                  try {
+                    await api.deleteHousehold(householdId);
+                    navigation.goBack();
+                  } catch (error) {
+                    showError(error);
+                  } finally {
+                    setDeleting(false);
+                  }
+                },
+              },
+            ]);
+          },
+        },
+      ],
+    );
   };
 
   const onLeave = () => {
@@ -172,11 +207,17 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
         </View>
       )}
       ListFooterComponent={
-        !isOwner ? (
+        isOwner ? (
+          <TouchableOpacity style={styles.leaveButton} onPress={onDeleteHousehold} disabled={deleting}>
+            <Text style={styles.leaveButtonText}>
+              {deleting ? 'Suppression...' : 'Supprimer ce foyer'}
+            </Text>
+          </TouchableOpacity>
+        ) : (
           <TouchableOpacity style={styles.leaveButton} onPress={onLeave}>
             <Text style={styles.leaveButtonText}>Quitter ce foyer</Text>
           </TouchableOpacity>
-        ) : null
+        )
       }
       ListEmptyComponent={<Text style={styles.empty}>Aucun membre</Text>}
     />
