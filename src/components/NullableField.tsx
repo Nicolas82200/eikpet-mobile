@@ -38,13 +38,13 @@ const styles = StyleSheet.create({
   noneChip: {
     alignSelf: 'flex-start',
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#E3D8C4',
     borderRadius: 16,
     paddingVertical: 6,
     paddingHorizontal: 12,
     marginBottom: 8,
   },
-  noneChipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
-  noneChipText: { color: '#333' },
+  noneChipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
+  noneChipText: { color: '#3A3226' },
   noneChipTextActive: { color: 'white', fontWeight: '600' },
 });

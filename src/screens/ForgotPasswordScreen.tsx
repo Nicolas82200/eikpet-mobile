@@ -56,9 +56,9 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24 },
   title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 12 },
-  hint: { color: '#666', textAlign: 'center', marginBottom: 24 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
-  button: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14, marginTop: 8 },
+  hint: { color: '#8A7B68', textAlign: 'center', marginBottom: 24 },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12 },
+  button: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 8 },
   buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  link: { textAlign: 'center', marginTop: 16, color: '#2f6f4f' },
+  link: { textAlign: 'center', marginTop: 16, color: '#B8863B' },
 });

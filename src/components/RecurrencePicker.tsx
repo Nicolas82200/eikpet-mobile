@@ -33,8 +33,8 @@ export default function RecurrencePicker({ value, onChange }: Props) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  chipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
-  chipText: { color: '#333' },
+  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
+  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
+  chipText: { color: '#3A3226' },
   chipTextActive: { color: 'white', fontWeight: '600' },
 });

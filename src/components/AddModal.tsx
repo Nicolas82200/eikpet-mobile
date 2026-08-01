@@ -48,5 +48,5 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: 'white', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   title: { fontSize: 18, fontWeight: 'bold' },
-  close: { color: '#2f6f4f', fontWeight: '600' },
+  close: { color: '#B8863B', fontWeight: '600' },
 });

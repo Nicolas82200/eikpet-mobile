@@ -47,9 +47,9 @@ export default function ChipPicker({ value, onChange, options, customPlaceholder
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 14 },
-  chipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
-  chipText: { color: '#333' },
+  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 14 },
+  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
+  chipText: { color: '#3A3226' },
   chipTextActive: { color: 'white', fontWeight: '600' },
-  customInput: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginTop: 8 },
+  customInput: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginTop: 8 },
 });

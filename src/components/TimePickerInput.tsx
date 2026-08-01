@@ -48,12 +48,12 @@ export default function TimePickerInput({ value, onChange, placeholder = 'Choisi
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#E3D8C4',
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
     backgroundColor: 'white',
   },
   valueText: { color: '#000' },
-  placeholderText: { color: '#999' },
+  placeholderText: { color: '#A79A85' },
 });

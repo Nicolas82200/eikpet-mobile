@@ -31,7 +31,7 @@ export default function Accordion({ title, subtitle, defaultOpen = false, warnin
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#f2f2f2', borderRadius: 8, marginBottom: 12, overflow: 'hidden' },
+  container: { backgroundColor: '#FAF6EF', borderRadius: 8, marginBottom: 12, overflow: 'hidden' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -41,8 +41,8 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 16, fontWeight: '600' },
-  subtitle: { color: '#666', marginTop: 2, fontSize: 13 },
-  chevron: { fontSize: 16, color: '#666', marginLeft: 12 },
+  subtitle: { color: '#8A7B68', marginTop: 2, fontSize: 13 },
+  chevron: { fontSize: 16, color: '#8A7B68', marginLeft: 12 },
   warningDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#d97706' },
   content: { paddingHorizontal: 16, paddingBottom: 16 },
 });

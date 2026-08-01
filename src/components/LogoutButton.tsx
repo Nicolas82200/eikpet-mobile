@@ -20,5 +20,5 @@ export default function LogoutButton() {
 }
 
 const styles = StyleSheet.create({
-  text: { color: '#a33', fontWeight: '600' },
+  text: { color: '#B3452C', fontWeight: '600' },
 });

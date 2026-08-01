@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer, useNavigation, type Theme } from '@react-navigation/native';
 import { createNativeStackNavigator, type NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '../auth/AuthContext';
+import { colors } from '../theme/colors';
 import { registerForPushNotifications } from '../notifications/registerForPushNotifications';
 import type { AppStackParamList, AuthStackParamList } from './types';
 import LoginScreen from '../screens/LoginScreen';
@@ -24,9 +25,29 @@ import HouseholdMembersScreen from '../screens/HouseholdMembersScreen';
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 
+const navigationTheme: Theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.accent,
+    background: colors.background,
+    card: colors.surface,
+    text: colors.textPrimary,
+    border: colors.border,
+  },
+};
+
+const headerScreenOptions = {
+  headerStyle: { backgroundColor: colors.surface },
+  headerTintColor: colors.accent,
+  headerTitleStyle: { color: colors.textPrimary, fontWeight: '600' as const },
+  headerShadowVisible: false,
+  contentStyle: { backgroundColor: colors.background },
+};
+
 function AuthNavigator() {
   return (
-    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+    <AuthStack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
       <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
@@ -64,7 +85,7 @@ function AppNavigator() {
   }, [navigation]);
 
   return (
-    <AppStack.Navigator>
+    <AppStack.Navigator screenOptions={headerScreenOptions}>
       <AppStack.Screen name="Households" component={HouseholdsScreen} options={{ title: 'Mes foyers' }} />
       <AppStack.Screen name="Animals" component={AnimalsScreen} options={{ title: 'Animaux' }} />
       <AppStack.Screen name="AnimalDetail" component={AnimalDetailScreen} options={{ title: 'Animal' }} />
@@ -96,11 +117,15 @@ export default function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
-  return <NavigationContainer>{isAuthenticated ? <AppNavigator /> : <AuthNavigator />}</NavigationContainer>;
+  return (
+    <NavigationContainer theme={navigationTheme}>
+      {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
+    </NavigationContainer>
+  );
 }

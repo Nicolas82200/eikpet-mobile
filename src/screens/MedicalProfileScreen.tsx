@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -43,7 +43,9 @@ function todayIsoDate(): string {
 export default function MedicalProfileScreen({ route }: Props) {
   const { animalId, animalName, species } = route.params;
   const [profile, setProfile] = useState<Partial<MedicalProfile>>({});
-  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const loadedRef = useRef(false);
+  const skipNextAutoSaveRef = useRef(false);
 
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [treatmentName, setTreatmentName] = useState('');
@@ -61,7 +63,11 @@ export default function MedicalProfileScreen({ route }: Props) {
   const load = useCallback(() => {
     api
       .getMedicalProfile(animalId)
-      .then((p) => setProfile(p ?? {}))
+      .then((p) => {
+        skipNextAutoSaveRef.current = true;
+        setProfile(p ?? {});
+        loadedRef.current = true;
+      })
       .catch(showLoadError);
     api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
     api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(showLoadError);
@@ -69,19 +75,29 @@ export default function MedicalProfileScreen({ route }: Props) {
 
   useFocusEffect(load);
 
+  // Enregistrement automatique : chaque changement (y compris le choix "Aucun(e)")
+  // est persiste sans attendre un clic sur un bouton "Enregistrer" distant.
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
+    setSaveStatus('saving');
+    const timeout = setTimeout(async () => {
+      try {
+        await api.upsertMedicalProfile(animalId, profile);
+        setSaveStatus('saved');
+      } catch (error) {
+        setSaveStatus('error');
+        showError(error);
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [profile, animalId]);
+
   const setField = (key: keyof MedicalProfile, value: string) => {
     setProfile((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const onSave = async () => {
-    setSaving(true);
-    try {
-      await api.upsertMedicalProfile(animalId, profile);
-    } catch (error) {
-      showError(error);
-    } finally {
-      setSaving(false);
-    }
   };
 
   const onAddTreatment = async () => {
@@ -193,7 +209,12 @@ export default function MedicalProfileScreen({ route }: Props) {
     <>
       <KeyboardAvoidingScreen>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>Fiche medicale — {animalName}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>Fiche medicale — {animalName}</Text>
+            {saveStatus === 'saving' && <Text style={styles.saveStatusText}>Enregistrement...</Text>}
+            {saveStatus === 'saved' && <Text style={styles.saveStatusTextOk}>Enregistre</Text>}
+            {saveStatus === 'error' && <Text style={styles.saveStatusTextError}>Erreur</Text>}
+          </View>
 
           <Accordion title="Antecedents medicaux" subtitle="Maladies, allergies, regime, groupe sanguin" warning={antecedentsIncomplete}>
             <Text style={styles.label}>Maladies chroniques</Text>
@@ -295,10 +316,6 @@ export default function MedicalProfileScreen({ route }: Props) {
               </>
             )}
           </Accordion>
-
-          <TouchableOpacity style={styles.button} onPress={onSave} disabled={saving}>
-            <Text style={styles.buttonText}>{saving ? 'Enregistrement...' : 'Enregistrer la fiche medicale'}</Text>
-          </TouchableOpacity>
 
           <Accordion
             title="Traitements en cours"
@@ -417,22 +434,24 @@ export default function MedicalProfileScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  label: { color: '#666', marginBottom: 4, marginTop: 8 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: 'white' },
-  button: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14, marginVertical: 8 },
-  buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
+  title: { fontSize: 22, fontWeight: 'bold' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  saveStatusText: { color: '#A79A85', fontSize: 13 },
+  saveStatusTextOk: { color: '#B8863B', fontSize: 13, fontWeight: '600' },
+  saveStatusTextError: { color: '#B3452C', fontSize: 13, fontWeight: '600' },
+  label: { color: '#8A7B68', marginBottom: 4, marginTop: 8 },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: 'white' },
   accordionAddRow: { alignItems: 'flex-end', marginBottom: 8 },
   listCard: { backgroundColor: 'white', borderRadius: 8, padding: 12, marginBottom: 8 },
   listCardTitle: { fontWeight: '600' },
-  listCardSubtitle: { color: '#666', marginTop: 2 },
-  deleteLink: { color: '#a33', fontWeight: '600', marginTop: 6 },
-  empty: { color: '#666' },
-  addButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 14 },
+  listCardSubtitle: { color: '#8A7B68', marginTop: 2 },
+  deleteLink: { color: '#B3452C', fontWeight: '600', marginTop: 6 },
+  empty: { color: '#8A7B68' },
+  addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  chipActive: { backgroundColor: '#2f6f4f', borderColor: '#2f6f4f' },
-  chipText: { color: '#333' },
+  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
+  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
+  chipText: { color: '#3A3226' },
   chipTextActive: { color: 'white', fontWeight: '600' },
 });

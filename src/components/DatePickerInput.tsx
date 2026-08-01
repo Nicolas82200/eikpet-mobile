@@ -64,14 +64,14 @@ export default function DatePickerInput({ value, onChange, placeholder = 'Choisi
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#E3D8C4',
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
     backgroundColor: 'white',
   },
   valueText: { color: '#000' },
-  placeholderText: { color: '#999' },
-  doneButton: { backgroundColor: '#2f6f4f', borderRadius: 8, padding: 10, marginBottom: 12, marginTop: 4 },
+  placeholderText: { color: '#A79A85' },
+  doneButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 10, marginBottom: 12, marginTop: 4 },
   doneButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });
