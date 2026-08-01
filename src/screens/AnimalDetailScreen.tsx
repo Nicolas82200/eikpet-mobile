@@ -220,31 +220,36 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         </Accordion>
 
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
-          }
-        >
-          <Text style={styles.cardTitle}>Fiche medicale</Text>
-          <Text style={styles.cardSubtitle}>Antecedents, allergies, traitements, assurance...</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate('HealthEntries', { animalId, animalName: animal.name, species: animal.species })
-          }
-        >
-          <Text style={styles.cardTitle}>Carnet de sante</Text>
-          <Text style={styles.cardSubtitle}>Vaccins, vermifuges, rdv veto...</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('Documents', { householdId, animalId })}
-        >
-          <Text style={styles.cardTitle}>Documents</Text>
-          <Text style={styles.cardSubtitle}>Ordonnances, analyses, certificats...</Text>
-        </TouchableOpacity>
+        <View style={styles.dashboardGrid}>
+          <TouchableOpacity
+            style={styles.dashboardTile}
+            onPress={() =>
+              navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
+            }
+          >
+            <Text style={styles.dashboardTileIcon}>🩺</Text>
+            <Text style={styles.dashboardTileTitle}>Fiche medicale</Text>
+            <Text style={styles.dashboardTileSubtitle}>Antecedents, allergies, traitements, assurance...</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dashboardTile}
+            onPress={() =>
+              navigation.navigate('HealthEntries', { animalId, animalName: animal.name, species: animal.species })
+            }
+          >
+            <Text style={styles.dashboardTileIcon}>📅</Text>
+            <Text style={styles.dashboardTileTitle}>Carnet de sante</Text>
+            <Text style={styles.dashboardTileSubtitle}>Vaccins, vermifuges, rdv veto...</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dashboardTile}
+            onPress={() => navigation.navigate('Documents', { householdId, animalId })}
+          >
+            <Text style={styles.dashboardTileIcon}>📄</Text>
+            <Text style={styles.dashboardTileTitle}>Documents</Text>
+            <Text style={styles.dashboardTileSubtitle}>Ordonnances, analyses, certificats...</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
           <Text style={styles.deleteButtonText}>Supprimer cet animal</Text>
@@ -283,9 +288,19 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
   saveButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 12, marginTop: 16 },
   saveButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  card: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 18, fontWeight: '600' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
+  dashboardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 16 },
+  dashboardTile: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E3D8C4',
+  },
+  dashboardTileIcon: { fontSize: 22, marginBottom: 6 },
+  dashboardTileTitle: { fontSize: 16, fontWeight: '700', color: '#3A3226' },
+  dashboardTileSubtitle: { color: '#8A7B68', marginTop: 4, fontSize: 12 },
   deleteButton: { padding: 12, marginTop: 8, marginBottom: 32 },
   deleteButtonText: { color: '#B3452C', textAlign: 'center', fontWeight: '600' },
 });

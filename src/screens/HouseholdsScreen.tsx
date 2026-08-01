@@ -79,6 +79,8 @@ export default function HouseholdsScreen({ navigation }: Props) {
         style={styles.container}
         contentContainerStyle={styles.content}
         data={households}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
@@ -89,11 +91,16 @@ export default function HouseholdsScreen({ navigation }: Props) {
         }
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.card}
+            style={styles.tile}
             onPress={() => navigation.navigate('Animals', { householdId: item.id, householdName: item.name })}
           >
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text style={styles.cardSubtitle}>Code d'invitation : {item.inviteCode}</Text>
+            <Text style={styles.tileIcon}>🏠</Text>
+            <Text style={styles.tileTitle} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={styles.tileSubtitle} numberOfLines={1}>
+              Code : {item.inviteCode}
+            </Text>
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate('HouseholdMembers', {
@@ -104,7 +111,7 @@ export default function HouseholdsScreen({ navigation }: Props) {
                 })
               }
             >
-              <Text style={styles.membersLink}>Gerer les membres</Text>
+              <Text style={styles.membersLink}>Membres</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         )}
@@ -171,10 +178,20 @@ const styles = StyleSheet.create({
   accountLink: { color: '#B8863B', fontWeight: '600' },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   title: { fontSize: 24, fontWeight: 'bold' },
-  card: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 18, fontWeight: '600' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  membersLink: { color: '#B8863B', fontWeight: '600', marginTop: 8 },
+  row: { gap: 12 },
+  tile: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E3D8C4',
+  },
+  tileIcon: { fontSize: 22, marginBottom: 6 },
+  tileTitle: { fontSize: 16, fontWeight: '700', color: '#3A3226' },
+  tileSubtitle: { color: '#8A7B68', marginTop: 2, fontSize: 12 },
+  membersLink: { color: '#B8863B', fontWeight: '600', marginTop: 10, fontSize: 12 },
   empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
   modeRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   modeChip: { flex: 1, borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, paddingVertical: 10 },
