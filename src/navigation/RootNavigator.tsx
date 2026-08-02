@@ -22,6 +22,7 @@ import DocumentsScreen from '../screens/DocumentsScreen';
 import AppointmentFollowUpScreen from '../screens/AppointmentFollowUpScreen';
 import HouseholdMembersScreen from '../screens/HouseholdMembersScreen';
 import PaywallScreen from '../screens/PaywallScreen';
+import ProvidersScreen from '../screens/ProvidersScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -110,6 +111,7 @@ function AppNavigator() {
       />
       <AppStack.Screen name="Account" component={AccountScreen} options={{ title: 'Mon compte' }} />
       <AppStack.Screen name="Paywall" component={PaywallScreen} options={{ title: 'Abonnement' }} />
+      <AppStack.Screen name="Providers" component={ProvidersScreen} options={{ title: 'Intervenants' }} />
     </AppStack.Navigator>
   );
 }

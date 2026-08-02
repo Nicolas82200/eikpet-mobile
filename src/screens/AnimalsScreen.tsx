@@ -68,6 +68,12 @@ export default function AnimalsScreen({ route, navigation }: Props) {
             >
               <Text style={styles.calendarLinkText}>Voir le calendrier des rappels</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.calendarLink}
+              onPress={() => navigation.navigate('Providers', { householdId, householdName })}
+            >
+              <Text style={styles.calendarLinkText}>Repertoire des intervenants</Text>
+            </TouchableOpacity>
           </>
         }
         renderItem={({ item }) => (

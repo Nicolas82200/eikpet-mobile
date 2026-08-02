@@ -124,3 +124,17 @@ export interface SubscriptionStatus {
   productId: string | null;
   currentPeriodEnd: string | null;
 }
+
+export type ProviderType = 'veto' | 'osteo' | 'marechal' | 'pension' | 'toiletteur' | 'educateur' | 'autre';
+
+export interface Provider {
+  id: number;
+  householdId: number;
+  type: ProviderType;
+  customTypeLabel: string | null;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  notes: string | null;
+}

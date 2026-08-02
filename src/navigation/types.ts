@@ -13,6 +13,7 @@ export type AppStackParamList = {
   HealthEntries: { animalId: number; animalName: string; species: string };
   Calendar: { householdId: number; householdName: string };
   Documents: { householdId: number; animalId?: number };
+  Providers: { householdId: number; householdName: string };
   AppointmentFollowUp: { animalId: number; entryId: number };
   HouseholdMembers: { householdId: number; householdName: string; inviteCode: string; isOwner: boolean };
   Account: undefined;
