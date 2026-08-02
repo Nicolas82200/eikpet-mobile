@@ -13,6 +13,7 @@ import type {
   HouseholdMember,
   HealthEntry,
   MedicalProfile,
+  Provider,
   SubscriptionStatus,
   SurgicalHistoryEntry,
   Treatment,
@@ -256,6 +257,30 @@ export async function uploadDocument(
 
 export function deleteDocument(documentId: number): Promise<void> {
   return apiRequest(`/documents/${documentId}`, { method: 'DELETE' });
+}
+
+// --- Repertoire des intervenants ---
+
+export function listProviders(householdId: number): Promise<Provider[]> {
+  return apiRequest(`/households/${householdId}/providers`);
+}
+
+export function createProvider(
+  householdId: number,
+  input: Partial<Omit<Provider, 'id' | 'householdId'>>,
+): Promise<Provider> {
+  return apiRequest(`/households/${householdId}/providers`, { method: 'POST', body: input });
+}
+
+export function updateProvider(
+  providerId: number,
+  input: Partial<Omit<Provider, 'id' | 'householdId'>>,
+): Promise<Provider> {
+  return apiRequest(`/providers/${providerId}`, { method: 'PATCH', body: input });
+}
+
+export function deleteProvider(providerId: number): Promise<void> {
+  return apiRequest(`/providers/${providerId}`, { method: 'DELETE' });
 }
 
 /** Telecharge le fichier dans le cache local et renvoie son URI (pour ouverture/partage). */
