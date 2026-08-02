@@ -200,6 +200,11 @@ export function listHealthEntries(animalId: number): Promise<HealthEntry[]> {
   return apiRequest(`/animals/${animalId}/health-entries`);
 }
 
+/** 3.7 Comptes-rendus : historique consolide, reserve a l'abonnement. */
+export function listReports(animalId: number): Promise<HealthEntry[]> {
+  return apiRequest(`/animals/${animalId}/reports`);
+}
+
 export function createHealthEntry(
   animalId: number,
   input: Partial<HealthEntry> & { recurrenceMonths?: number },

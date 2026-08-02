@@ -260,6 +260,14 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
             <Text style={styles.dashboardTileTitle}>Pension</Text>
             <Text style={styles.dashboardTileSubtitle}>Echeances, statut regle/non regle...</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dashboardTile}
+            onPress={() => navigation.navigate('Reports', { animalId, animalName: animal.name })}
+          >
+            <Text style={styles.dashboardTileIcon}>📝</Text>
+            <Text style={styles.dashboardTileTitle}>Comptes-rendus</Text>
+            <Text style={styles.dashboardTileSubtitle}>Historique consolide des rdv...</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
