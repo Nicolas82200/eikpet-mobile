@@ -138,3 +138,18 @@ export interface Provider {
   address: string | null;
   notes: string | null;
 }
+
+export type BoardingPeriodicity = 'unique' | 'hebdomadaire' | 'mensuel' | 'annuel';
+export type BoardingStatus = 'regle' | 'non_regle';
+
+export interface BoardingEntry {
+  id: number;
+  animalId: number;
+  name: string;
+  address: string | null;
+  price: number | null;
+  periodicity: BoardingPeriodicity;
+  dueDate: string;
+  status: BoardingStatus;
+  notes: string | null;
+}

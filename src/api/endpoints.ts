@@ -6,6 +6,7 @@ import { getRefreshToken } from '../auth/token-storage';
 import type {
   Animal,
   AuthTokens,
+  BoardingEntry,
   CalendarEntry,
   DocumentCategory,
   DocumentRecord,
@@ -281,6 +282,31 @@ export function updateProvider(
 
 export function deleteProvider(providerId: number): Promise<void> {
   return apiRequest(`/providers/${providerId}`, { method: 'DELETE' });
+}
+
+// --- Pension / hebergement ---
+
+export function listBoardings(animalId: number): Promise<BoardingEntry[]> {
+  return apiRequest(`/animals/${animalId}/boardings`);
+}
+
+export function createBoarding(
+  animalId: number,
+  input: Partial<Omit<BoardingEntry, 'id' | 'animalId'>>,
+): Promise<BoardingEntry> {
+  return apiRequest(`/animals/${animalId}/boardings`, { method: 'POST', body: input });
+}
+
+export function updateBoarding(
+  animalId: number,
+  boardingId: number,
+  input: Partial<Omit<BoardingEntry, 'id' | 'animalId'>>,
+): Promise<BoardingEntry> {
+  return apiRequest(`/animals/${animalId}/boardings/${boardingId}`, { method: 'PATCH', body: input });
+}
+
+export function deleteBoarding(animalId: number, boardingId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/boardings/${boardingId}`, { method: 'DELETE' });
 }
 
 /** Telecharge le fichier dans le cache local et renvoie son URI (pour ouverture/partage). */
