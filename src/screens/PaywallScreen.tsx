@@ -15,7 +15,7 @@ const BENEFITS = [
 ];
 
 export default function PaywallScreen({ navigation }: Props) {
-  const { offering, isLoading, purchasePackage, restorePurchases } = usePremium();
+  const { offering, isLoading, isAvailable, purchasePackage, restorePurchases } = usePremium();
   const [purchasing, setPurchasing] = useState<string | null>(null);
 
   const onPurchase = async (packageId: string) => {
@@ -48,7 +48,12 @@ export default function PaywallScreen({ navigation }: Props) {
         </Text>
       ))}
 
-      {isLoading ? (
+      {!isAvailable ? (
+        <Text style={styles.hint}>
+          Les achats ne sont pas disponibles dans Expo Go. Installe un build EAS (development, preview ou production)
+          pour tester l&apos;abonnement.
+        </Text>
+      ) : isLoading ? (
         <ActivityIndicator style={styles.loader} />
       ) : offering ? (
         offering.availablePackages.map((pkg) => (
@@ -67,9 +72,11 @@ export default function PaywallScreen({ navigation }: Props) {
         <Text style={styles.hint}>Les offres ne sont pas disponibles pour le moment.</Text>
       )}
 
-      <TouchableOpacity style={styles.restoreButton} onPress={onRestore}>
-        <Text style={styles.restoreButtonText}>Restaurer mes achats</Text>
-      </TouchableOpacity>
+      {isAvailable && (
+        <TouchableOpacity style={styles.restoreButton} onPress={onRestore}>
+          <Text style={styles.restoreButtonText}>Restaurer mes achats</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
