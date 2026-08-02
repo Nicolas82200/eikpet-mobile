@@ -25,6 +25,7 @@ import PaywallScreen from '../screens/PaywallScreen';
 import ProvidersScreen from '../screens/ProvidersScreen';
 import BoardingsScreen from '../screens/BoardingsScreen';
 import ReportsScreen from '../screens/ReportsScreen';
+import BudgetScreen from '../screens/BudgetScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -116,6 +117,7 @@ function AppNavigator() {
       <AppStack.Screen name="Providers" component={ProvidersScreen} options={{ title: 'Intervenants' }} />
       <AppStack.Screen name="Boardings" component={BoardingsScreen} options={{ title: 'Pension' }} />
       <AppStack.Screen name="Reports" component={ReportsScreen} options={{ title: 'Comptes-rendus' }} />
+      <AppStack.Screen name="Budget" component={BudgetScreen} options={{ title: 'Budget' }} />
     </AppStack.Navigator>
   );
 }

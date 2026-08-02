@@ -142,6 +142,20 @@ export interface Provider {
 export type BoardingPeriodicity = 'unique' | 'hebdomadaire' | 'mensuel' | 'annuel';
 export type BoardingStatus = 'regle' | 'non_regle';
 
+export interface HouseholdBudget {
+  householdId: number;
+  total: number;
+  byAnimal: { animalId: number; animalName: string; total: number }[];
+}
+
+export interface AnimalBudget {
+  animalId: number;
+  healthTotal: number;
+  boardingTotal: number;
+  total: number;
+  byCategory: { type: HealthEntryType; total: number }[];
+}
+
 export interface BoardingEntry {
   id: number;
   animalId: number;

@@ -5,12 +5,14 @@ import { saveTokens, clearTokens, getAccessToken } from '../auth/token-storage';
 import { getRefreshToken } from '../auth/token-storage';
 import type {
   Animal,
+  AnimalBudget,
   AuthTokens,
   BoardingEntry,
   CalendarEntry,
   DocumentCategory,
   DocumentRecord,
   Household,
+  HouseholdBudget,
   HouseholdMember,
   HealthEntry,
   MedicalProfile,
@@ -312,6 +314,16 @@ export function updateBoarding(
 
 export function deleteBoarding(animalId: number, boardingId: number): Promise<void> {
   return apiRequest(`/animals/${animalId}/boardings/${boardingId}`, { method: 'DELETE' });
+}
+
+// --- Budget (3.9) ---
+
+export function getHouseholdBudget(householdId: number): Promise<HouseholdBudget> {
+  return apiRequest(`/households/${householdId}/budget`);
+}
+
+export function getAnimalBudget(animalId: number): Promise<AnimalBudget> {
+  return apiRequest(`/animals/${animalId}/budget`);
 }
 
 /** Telecharge le fichier dans le cache local et renvoie son URI (pour ouverture/partage). */

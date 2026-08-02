@@ -74,6 +74,12 @@ export default function AnimalsScreen({ route, navigation }: Props) {
             >
               <Text style={styles.calendarLinkText}>Repertoire des intervenants</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.calendarLink}
+              onPress={() => navigation.navigate('Budget', { householdId, householdName })}
+            >
+              <Text style={styles.calendarLinkText}>Voir le budget</Text>
+            </TouchableOpacity>
           </>
         }
         renderItem={({ item }) => (
