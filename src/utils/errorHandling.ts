@@ -1,6 +1,11 @@
 import { Alert } from 'react-native';
 import { ApiError } from '../api/client';
 
+/** Vrai si l'erreur vient d'une limite du plan gratuit (cf. cahier des charges §6). */
+export function isPlanLimitError(error: unknown): boolean {
+  return error instanceof ApiError && !!error.errorCode?.startsWith('PLAN_LIMIT_');
+}
+
 export function getErrorMessage(error: unknown, fallback = 'Une erreur est survenue'): string {
   if (error instanceof ApiError) {
     return error.message;

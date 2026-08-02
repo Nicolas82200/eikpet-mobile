@@ -21,6 +21,7 @@ import CalendarScreen from '../screens/CalendarScreen';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import AppointmentFollowUpScreen from '../screens/AppointmentFollowUpScreen';
 import HouseholdMembersScreen from '../screens/HouseholdMembersScreen';
+import PaywallScreen from '../screens/PaywallScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -108,6 +109,7 @@ function AppNavigator() {
         options={{ title: 'Membres du foyer' }}
       />
       <AppStack.Screen name="Account" component={AccountScreen} options={{ title: 'Mon compte' }} />
+      <AppStack.Screen name="Paywall" component={PaywallScreen} options={{ title: 'Abonnement' }} />
     </AppStack.Navigator>
   );
 }

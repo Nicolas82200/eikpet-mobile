@@ -9,7 +9,7 @@ import LogoutButton from '../components/LogoutButton';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import { useRefreshable } from '../hooks/useRefreshable';
-import { showError, showLoadError } from '../utils/errorHandling';
+import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Households'>;
 
@@ -52,7 +52,12 @@ export default function HouseholdsScreen({ navigation }: Props) {
       setModalVisible(false);
       load();
     } catch (error) {
-      showError(error);
+      if (isPlanLimitError(error)) {
+        setModalVisible(false);
+        navigation.navigate('Paywall');
+      } else {
+        showError(error);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -67,7 +72,12 @@ export default function HouseholdsScreen({ navigation }: Props) {
       setModalVisible(false);
       load();
     } catch (error) {
-      showError(error);
+      if (isPlanLimitError(error)) {
+        setModalVisible(false);
+        navigation.navigate('Paywall');
+      } else {
+        showError(error);
+      }
     } finally {
       setSubmitting(false);
     }

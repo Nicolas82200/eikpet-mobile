@@ -11,13 +11,13 @@ import { DOCUMENT_CATEGORIES, getCategoryLabel } from '../data/documentCategorie
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import { useRefreshable } from '../hooks/useRefreshable';
-import { showError, showLoadError } from '../utils/errorHandling';
+import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Documents'>;
 
 type PickedFile = { uri: string; name: string; mimeType: string };
 
-export default function DocumentsScreen({ route }: Props) {
+export default function DocumentsScreen({ route, navigation }: Props) {
   const { householdId, animalId } = route.params;
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -62,7 +62,12 @@ export default function DocumentsScreen({ route }: Props) {
       setModalVisible(false);
       load();
     } catch (error) {
-      showError(error, 'Envoi impossible');
+      if (isPlanLimitError(error)) {
+        setModalVisible(false);
+        navigation.navigate('Paywall');
+      } else {
+        showError(error, 'Envoi impossible');
+      }
     } finally {
       setUploading(false);
     }

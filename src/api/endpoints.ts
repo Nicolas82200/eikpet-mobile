@@ -13,6 +13,7 @@ import type {
   HouseholdMember,
   HealthEntry,
   MedicalProfile,
+  SubscriptionStatus,
   SurgicalHistoryEntry,
   Treatment,
 } from '../types/api';
@@ -70,6 +71,12 @@ export function changePassword(currentPassword: string, newPassword: string): Pr
 
 export function deleteAccount(password: string): Promise<void> {
   return apiRequest('/auth/account', { method: 'DELETE', body: { password } });
+}
+
+// --- Abonnement ---
+
+export function getSubscriptionStatus(): Promise<SubscriptionStatus> {
+  return apiRequest('/me/subscription');
 }
 
 // --- Foyers ---

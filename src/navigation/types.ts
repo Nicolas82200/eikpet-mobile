@@ -16,4 +16,5 @@ export type AppStackParamList = {
   AppointmentFollowUp: { animalId: number; entryId: number };
   HouseholdMembers: { householdId: number; householdName: string; inviteCode: string; isOwner: boolean };
   Account: undefined;
+  Paywall: undefined;
 };

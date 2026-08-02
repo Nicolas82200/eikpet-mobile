@@ -115,3 +115,12 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
+
+export type SubscriptionPlanStatus = 'active' | 'grace_period' | 'canceled' | 'expired';
+
+export interface SubscriptionStatus {
+  isPremium: boolean;
+  status: SubscriptionPlanStatus;
+  productId: string | null;
+  currentPeriodEnd: string | null;
+}

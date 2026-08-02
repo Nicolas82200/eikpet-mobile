@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AddModal from '../components/AddModal';
 import * as api from '../api/endpoints';
 import { useAuth } from '../auth/AuthContext';
+import { usePremium } from '../subscriptions/PurchasesContext';
 import { showError } from '../utils/errorHandling';
+import type { AppStackParamList } from '../navigation/types';
 
-export default function AccountScreen() {
+type Props = NativeStackScreenProps<AppStackParamList, 'Account'>;
+
+export default function AccountScreen({ navigation }: Props) {
   const { logout } = useAuth();
+  const { isPremium } = usePremium();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -63,6 +69,15 @@ export default function AccountScreen() {
     <>
       <KeyboardAvoidingScreen>
         <View style={styles.container}>
+          <View style={styles.planCard}>
+            <Text style={styles.planLabel}>{isPremium ? 'Abonnement premium actif' : 'Plan gratuit'}</Text>
+            {!isPremium && (
+              <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Paywall')}>
+                <Text style={styles.buttonText}>Passer premium</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
           <Text style={styles.title}>Changer le mot de passe</Text>
           <TextInput
             style={styles.input}
@@ -126,6 +141,13 @@ export default function AccountScreen() {
 
 const styles = StyleSheet.create({
   container: { padding: 16 },
+  planCard: {
+    backgroundColor: '#FBF5EA',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 24,
+  },
+  planLabel: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
   input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12 },
   button: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
