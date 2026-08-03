@@ -55,7 +55,7 @@ export default function AutocompleteInput({ value, onChange, options, placeholde
 
 const styles = StyleSheet.create({
   wrapper: { marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, backgroundColor: 'white', color: '#B8863B' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, backgroundColor: '#EFE2C4', color: '#B8863B' },
   suggestions: {
     borderWidth: 1,
     borderColor: '#E3D8C4',

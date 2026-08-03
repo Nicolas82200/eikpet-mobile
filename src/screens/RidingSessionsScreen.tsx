@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
   chipText: { color: '#3A3226' },
   chipTextActive: { color: 'white', fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, marginTop: 12, color: '#B8863B' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, marginTop: 12, backgroundColor: '#EFE2C4', color: '#B8863B' },
   submitButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 8 },
   submitButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });

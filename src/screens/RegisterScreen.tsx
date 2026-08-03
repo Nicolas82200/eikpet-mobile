@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   container: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 24 },
   hint: { marginTop: 8, marginBottom: 4, color: '#8A7B68' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, color: '#B8863B' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#B8863B' },
   button: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 8 },
   buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
   link: { textAlign: 'center', marginTop: 16, color: '#B8863B' },
