@@ -25,13 +25,14 @@ try {
 export default function ProvidersMapScreen({ route, navigation }: Props) {
   const { householdId } = route.params;
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [hasAddressedProviders, setHasAddressedProviders] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   const load = useCallback(() => {
-    api
-      .listProvidersForMap(householdId)
-      .then((list) => {
-        setProviders(list);
+    Promise.all([api.listProvidersForMap(householdId), api.listProviders(householdId)])
+      .then(([mapList, fullList]) => {
+        setProviders(mapList);
+        setHasAddressedProviders(fullList.some((p) => !!p.address));
         setLoaded(true);
       })
       .catch((error) => {
@@ -64,8 +65,9 @@ export default function ProvidersMapScreen({ route, navigation }: Props) {
     return (
       <View style={styles.center}>
         <Text style={styles.hint}>
-          Aucun intervenant geocode pour l&apos;instant. Renseigne une adresse dans le repertoire des
-          intervenants pour qu&apos;il apparaisse ici.
+          {hasAddressedProviders
+            ? "Aucune position disponible pour l'instant : la geolocalisation des adresses (geocodage) n'est pas encore configuree cote serveur. Les intervenants restent consultables dans le repertoire en liste."
+            : "Aucun intervenant avec une adresse pour l'instant. Renseigne une adresse dans le repertoire des intervenants pour qu'il apparaisse ici (une fois le geocodage configure)."}
         </Text>
       </View>
     );
