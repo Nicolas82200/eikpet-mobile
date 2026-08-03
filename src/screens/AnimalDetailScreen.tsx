@@ -338,6 +338,14 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
               <Text style={styles.dashboardTileSubtitle}>Dressage, osteo, entrainement...</Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={styles.dashboardTile}
+            onPress={() => navigation.navigate('WeightCurve', { animalId, animalName: animal.name })}
+          >
+            <Text style={styles.dashboardTileIcon}>⚖️</Text>
+            <Text style={styles.dashboardTileTitle}>Courbe de poids</Text>
+            <Text style={styles.dashboardTileSubtitle}>Suivi du poids dans le temps...</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>

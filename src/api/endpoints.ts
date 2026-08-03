@@ -21,6 +21,7 @@ import type {
   SubscriptionStatus,
   SurgicalHistoryEntry,
   Treatment,
+  WeightEntry,
 } from '../types/api';
 
 // --- Auth ---
@@ -358,6 +359,23 @@ export function updateRidingSession(
 
 export function deleteRidingSession(animalId: number, sessionId: number): Promise<void> {
   return apiRequest(`/animals/${animalId}/riding-sessions/${sessionId}`, { method: 'DELETE' });
+}
+
+// --- Courbe de poids ---
+
+export function listWeightEntries(animalId: number): Promise<WeightEntry[]> {
+  return apiRequest(`/animals/${animalId}/weight-entries`);
+}
+
+export function createWeightEntry(
+  animalId: number,
+  input: { weightKg: number; recordedDate: string; notes?: string },
+): Promise<WeightEntry> {
+  return apiRequest(`/animals/${animalId}/weight-entries`, { method: 'POST', body: input });
+}
+
+export function deleteWeightEntry(animalId: number, entryId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/weight-entries/${entryId}`, { method: 'DELETE' });
 }
 
 // --- Budget (3.9) ---

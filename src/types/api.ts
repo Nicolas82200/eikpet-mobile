@@ -184,3 +184,11 @@ export interface RidingSession {
   report: string | null;
   price: number | null;
 }
+
+export interface WeightEntry {
+  id: number;
+  animalId: number;
+  weightKg: number;
+  recordedDate: string;
+  notes: string | null;
+}
