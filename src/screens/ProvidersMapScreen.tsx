@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
-import Constants from 'expo-constants';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -12,10 +11,16 @@ import { isPlanLimitError, showLoadError } from '../utils/errorHandling';
 type Props = NativeStackScreenProps<AppStackParamList, 'ProvidersMap'>;
 
 // react-native-maps est un module natif : indisponible dans Expo Go (meme raison que
-// react-native-purchases, cf. PurchasesContext). On ne le require() que hors Expo Go.
-const isExpoGo = Constants.appOwnership === 'expo';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const Maps = isExpoGo ? null : (require('react-native-maps') as typeof import('react-native-maps'));
+// react-native-purchases, cf. PurchasesContext). La detection d'environnement seule
+// n'est pas fiable a 100% selon la version d'Expo Go : on entoure aussi le require()
+// d'un try/catch pour ne jamais planter l'app si le module natif est absent.
+let Maps: typeof import('react-native-maps') | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  Maps = require('react-native-maps') as typeof import('react-native-maps');
+} catch {
+  Maps = null;
+}
 
 export default function ProvidersMapScreen({ route, navigation }: Props) {
   const { householdId } = route.params;

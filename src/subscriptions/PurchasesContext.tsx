@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 import type Purchases from 'react-native-purchases';
 import type { CustomerInfo, PurchasesOffering } from 'react-native-purchases';
 import { REVENUECAT_API_KEY_ANDROID, REVENUECAT_API_KEY_IOS } from '../api/config';
@@ -15,11 +14,17 @@ const ENTITLEMENT_ID = 'premium';
  * exception au premier appel natif). On ne le require() que hors Expo Go, pour pouvoir
  * developper/deboguer l'UI avec Expo Go sans configurer un build EAS a chaque fois.
  * Les achats reels ne sont testables que dans un vrai build (development/preview/production).
+ * Le try/catch est indispensable : la detection d'environnement seule (Constants.appOwnership)
+ * n'est pas fiable a 100% selon la version d'Expo Go, et un require() qui plante ferait
+ * planter toute l'app au demarrage plutot que juste desactiver la fonctionnalite.
  */
-const isExpoGo = Constants.appOwnership === 'expo';
-const PurchasesSdk: typeof Purchases | null = isExpoGo
-  ? null
-  : (require('react-native-purchases').default as typeof Purchases);
+let PurchasesSdk: typeof Purchases | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  PurchasesSdk = require('react-native-purchases').default as typeof Purchases;
+} catch {
+  PurchasesSdk = null;
+}
 
 interface PurchasesContextValue {
   isPremium: boolean;
