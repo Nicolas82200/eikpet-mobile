@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   photoPlaceholderText: { color: '#8A7B68', textAlign: 'center', paddingHorizontal: 8 },
   photoUploading: { textAlign: 'center', color: '#8A7B68', marginTop: 6 },
   label: { color: '#8A7B68', marginBottom: 4, marginTop: 10 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, backgroundColor: '#EFE2C4', color: '#B8863B' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, backgroundColor: '#EFE2C4', color: '#000000' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 14 },
   chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },

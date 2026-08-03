@@ -31,7 +31,7 @@ export default function Accordion({ title, subtitle, defaultOpen = false, warnin
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#FAF6EF', borderRadius: 8, marginBottom: 12, overflow: 'hidden' },
+  container: { backgroundColor: '#EDE3D0', borderRadius: 8, marginBottom: 12, overflow: 'hidden' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

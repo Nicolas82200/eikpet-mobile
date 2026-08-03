@@ -51,5 +51,5 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
   chipText: { color: '#3A3226' },
   chipTextActive: { color: 'white', fontWeight: '600' },
-  customInput: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginTop: 8, backgroundColor: '#EFE2C4', color: '#B8863B' },
+  customInput: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginTop: 8, backgroundColor: '#EFE2C4', color: '#000000' },
 });
