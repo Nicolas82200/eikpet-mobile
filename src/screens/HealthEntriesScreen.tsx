@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   typeChipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
   typeChipText: { color: '#3A3226' },
   typeChipTextActive: { color: 'white' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, color: '#3A3226' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, color: '#B8863B' },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
   addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },

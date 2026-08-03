@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   saveStatusTextOk: { color: '#B8863B', fontSize: 13, fontWeight: '600' },
   saveStatusTextError: { color: '#B3452C', fontSize: 13, fontWeight: '600' },
   label: { color: '#8A7B68', marginBottom: 4, marginTop: 8 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: 'white', color: '#3A3226' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: 'white', color: '#B8863B' },
   accordionAddRow: { alignItems: 'flex-end', marginBottom: 8 },
   listCard: { backgroundColor: 'white', borderRadius: 8, padding: 12, marginBottom: 8 },
   listCardTitle: { fontWeight: '600' },

@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   subtitle: { color: '#8A7B68', marginBottom: 20 },
   section: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 20 },
   sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 10, backgroundColor: 'white', color: '#3A3226' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 10, backgroundColor: 'white', color: '#B8863B' },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
   button: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
   buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },

@@ -26,7 +26,8 @@
       "expo-secure-store",
       "expo-document-picker",
       "expo-image-picker",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "./plugins/withDisableForceDark.js"
     ],
     "extra": {
       "apiBaseUrl": "https://137-74-163-226.nip.io",
