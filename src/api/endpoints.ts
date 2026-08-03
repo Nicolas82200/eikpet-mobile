@@ -17,6 +17,7 @@ import type {
   HealthEntry,
   MedicalProfile,
   Provider,
+  RidingSession,
   SubscriptionStatus,
   SurgicalHistoryEntry,
   Treatment,
@@ -291,6 +292,11 @@ export function deleteProvider(providerId: number): Promise<void> {
   return apiRequest(`/providers/${providerId}`, { method: 'DELETE' });
 }
 
+/** 3.6 V3 : intervenants geocodes, pour la carte interactive (reserve a l'abonnement). */
+export function listProvidersForMap(householdId: number): Promise<Provider[]> {
+  return apiRequest(`/households/${householdId}/providers/map`);
+}
+
 // --- Pension / hebergement ---
 
 export function listBoardings(animalId: number): Promise<BoardingEntry[]> {
@@ -314,6 +320,31 @@ export function updateBoarding(
 
 export function deleteBoarding(animalId: number, boardingId: number): Promise<void> {
   return apiRequest(`/animals/${animalId}/boardings/${boardingId}`, { method: 'DELETE' });
+}
+
+// --- Seances chevaux ---
+
+export function listRidingSessions(animalId: number): Promise<RidingSession[]> {
+  return apiRequest(`/animals/${animalId}/riding-sessions`);
+}
+
+export function createRidingSession(
+  animalId: number,
+  input: Partial<Omit<RidingSession, 'id' | 'animalId'>>,
+): Promise<RidingSession> {
+  return apiRequest(`/animals/${animalId}/riding-sessions`, { method: 'POST', body: input });
+}
+
+export function updateRidingSession(
+  animalId: number,
+  sessionId: number,
+  input: Partial<Omit<RidingSession, 'id' | 'animalId'>>,
+): Promise<RidingSession> {
+  return apiRequest(`/animals/${animalId}/riding-sessions/${sessionId}`, { method: 'PATCH', body: input });
+}
+
+export function deleteRidingSession(animalId: number, sessionId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/riding-sessions/${sessionId}`, { method: 'DELETE' });
 }
 
 // --- Budget (3.9) ---

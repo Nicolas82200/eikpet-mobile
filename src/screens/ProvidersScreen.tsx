@@ -13,8 +13,8 @@ import { showError, showLoadError } from '../utils/errorHandling';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Providers'>;
 
-export default function ProvidersScreen({ route }: Props) {
-  const { householdId } = route.params;
+export default function ProvidersScreen({ route, navigation }: Props) {
+  const { householdId, householdName } = route.params;
   const [providers, setProviders] = useState<Provider[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [type, setType] = useState<ProviderType>('veto');
@@ -84,10 +84,18 @@ export default function ProvidersScreen({ route }: Props) {
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>Intervenants</Text>
-            <AddIconButton onPress={() => setModalVisible(true)} />
-          </View>
+          <>
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>Intervenants</Text>
+              <AddIconButton onPress={() => setModalVisible(true)} />
+            </View>
+            <TouchableOpacity
+              style={styles.mapLink}
+              onPress={() => navigation.navigate('ProvidersMap', { householdId, householdName })}
+            >
+              <Text style={styles.mapLinkText}>Voir la carte</Text>
+            </TouchableOpacity>
+          </>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -151,6 +159,8 @@ const styles = StyleSheet.create({
   content: { padding: 16 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   title: { fontSize: 22, fontWeight: 'bold' },
+  mapLink: { marginBottom: 16 },
+  mapLinkText: { color: '#B8863B', fontWeight: '600' },
   card: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardType: { color: '#B8863B', fontWeight: '700', fontSize: 12, textTransform: 'uppercase' },
   cardTitle: { fontSize: 16, fontWeight: '600', marginTop: 4 },
