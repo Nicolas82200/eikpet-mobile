@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
-import type { Animal, AnimalSex, HealthEntry, MedicalProfile } from '../types/api';
+import type { Animal, AnimalSex, HealthEntry, MedicalProfile, Provider } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import Accordion from '../components/Accordion';
 import AutocompleteInput from '../components/AutocompleteInput';
@@ -13,8 +13,11 @@ import DatePickerInput from '../components/DatePickerInput';
 import AuthenticatedImage from '../components/AuthenticatedImage';
 import LoadingScreen from '../components/LoadingScreen';
 import WarningBanner from '../components/WarningBanner';
+import AddIconButton from '../components/AddIconButton';
+import AddModal from '../components/AddModal';
 import { getBreedsForSpecies } from '../data/breeds';
 import { getColorsForSpecies } from '../data/colors';
+import { getProviderTypeLabel } from '../data/providerTypes';
 import { getAnimalWarnings } from '../utils/animalWarnings';
 import { showError, showLoadError } from '../utils/errorHandling';
 
@@ -34,6 +37,9 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [medicalProfile, setMedicalProfile] = useState<Partial<MedicalProfile> | null>(null);
   const [healthEntries, setHealthEntries] = useState<HealthEntry[]>([]);
+  const [linkedProviders, setLinkedProviders] = useState<Provider[]>([]);
+  const [householdProviders, setHouseholdProviders] = useState<Provider[]>([]);
+  const [providerPickerVisible, setProviderPickerVisible] = useState(false);
 
   const load = useCallback(() => {
     api
@@ -45,7 +51,9 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
       .catch(showLoadError);
     api.getMedicalProfile(animalId).then(setMedicalProfile).catch(() => setMedicalProfile(null));
     api.listHealthEntries(animalId).then(setHealthEntries).catch(() => setHealthEntries([]));
-  }, [animalId]);
+    api.listAnimalProviders(animalId).then(setLinkedProviders).catch(() => setLinkedProviders([]));
+    api.listProviders(householdId).then(setHouseholdProviders).catch(() => setHouseholdProviders([]));
+  }, [animalId, householdId]);
 
   useFocusEffect(load);
 
@@ -102,6 +110,34 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
     }
   };
 
+  const onLinkProvider = async (provider: Provider) => {
+    try {
+      const updated = await api.linkAnimalProvider(animalId, provider.id);
+      setLinkedProviders(updated);
+      setProviderPickerVisible(false);
+    } catch (error) {
+      showError(error);
+    }
+  };
+
+  const onUnlinkProvider = (provider: Provider) => {
+    Alert.alert('Retirer cet intervenant ?', provider.name, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Retirer',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.unlinkAnimalProvider(animalId, provider.id);
+            setLinkedProviders((prev) => prev.filter((p) => p.id !== provider.id));
+          } catch (error) {
+            showError(error);
+          }
+        },
+      },
+    ]);
+  };
+
   const onDelete = () => {
     Alert.alert('Supprimer cet animal ?', 'Cette action est irreversible.', [
       { text: 'Annuler', style: 'cancel' },
@@ -126,8 +162,13 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
 
   const warnings = getAnimalWarnings(medicalProfile, healthEntries);
 
+  const unlinkedProviders = householdProviders.filter(
+    (p) => !linkedProviders.some((linked) => linked.id === p.id),
+  );
+
   return (
-    <KeyboardAvoidingScreen>
+    <>
+      <KeyboardAvoidingScreen>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <TouchableOpacity style={styles.photoContainer} onPress={onPickPhoto} disabled={uploadingPhoto}>
           {animal.photoUrl ? (
@@ -223,6 +264,24 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         </Accordion>
 
+        <Accordion title="Intervenants" subtitle={linkedProviders.length > 0 ? `${linkedProviders.length} associe(s)` : 'Aucun'}>
+          <View style={styles.accordionAddRow}>
+            <AddIconButton onPress={() => setProviderPickerVisible(true)} />
+          </View>
+          {linkedProviders.map((provider) => (
+            <View key={provider.id} style={styles.listCard}>
+              <Text style={styles.listCardTitle}>{provider.name}</Text>
+              <Text style={styles.listCardSubtitle}>{getProviderTypeLabel(provider.type)}</Text>
+              <TouchableOpacity onPress={() => onUnlinkProvider(provider)}>
+                <Text style={styles.deleteLink}>Retirer</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+          {linkedProviders.length === 0 && (
+            <Text style={styles.emptyHint}>Aucun intervenant associe a cet animal pour l&apos;instant.</Text>
+          )}
+        </Accordion>
+
         <View style={styles.dashboardGrid}>
           <TouchableOpacity
             style={styles.dashboardTile}
@@ -282,7 +341,33 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           <Text style={styles.deleteButtonText}>Supprimer cet animal</Text>
         </TouchableOpacity>
       </ScrollView>
-    </KeyboardAvoidingScreen>
+      </KeyboardAvoidingScreen>
+
+      <AddModal
+        visible={providerPickerVisible}
+        title="Associer un intervenant"
+        onClose={() => setProviderPickerVisible(false)}
+      >
+        {unlinkedProviders.length === 0 ? (
+          <Text style={styles.emptyHint}>
+            {householdProviders.length === 0
+              ? "Aucun intervenant dans le repertoire du foyer. Ajoutes-en un depuis l'ecran Intervenants."
+              : 'Tous les intervenants du foyer sont deja associes a cet animal.'}
+          </Text>
+        ) : (
+          unlinkedProviders.map((provider) => (
+            <TouchableOpacity
+              key={provider.id}
+              style={styles.listCard}
+              onPress={() => onLinkProvider(provider)}
+            >
+              <Text style={styles.listCardTitle}>{provider.name}</Text>
+              <Text style={styles.listCardSubtitle}>{getProviderTypeLabel(provider.type)}</Text>
+            </TouchableOpacity>
+          ))
+        )}
+      </AddModal>
+    </>
   );
 }
 
@@ -330,4 +415,10 @@ const styles = StyleSheet.create({
   dashboardTileSubtitle: { color: '#8A7B68', marginTop: 4, fontSize: 12 },
   deleteButton: { padding: 12, marginTop: 8, marginBottom: 32 },
   deleteButtonText: { color: '#B3452C', textAlign: 'center', fontWeight: '600' },
+  accordionAddRow: { alignItems: 'flex-end', marginBottom: 8 },
+  listCard: { backgroundColor: 'white', borderRadius: 8, padding: 12, marginBottom: 8 },
+  listCardTitle: { fontWeight: '600' },
+  listCardSubtitle: { color: '#8A7B68', marginTop: 2 },
+  deleteLink: { color: '#B3452C', fontWeight: '600', marginTop: 6 },
+  emptyHint: { color: '#8A7B68' },
 });

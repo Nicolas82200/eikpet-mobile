@@ -297,6 +297,19 @@ export function listProvidersForMap(householdId: number): Promise<Provider[]> {
   return apiRequest(`/households/${householdId}/providers/map`);
 }
 
+/** Intervenants lies a un animal precis (un intervenant peut etre associe a plusieurs animaux). */
+export function listAnimalProviders(animalId: number): Promise<Provider[]> {
+  return apiRequest(`/animals/${animalId}/providers`);
+}
+
+export function linkAnimalProvider(animalId: number, providerId: number): Promise<Provider[]> {
+  return apiRequest(`/animals/${animalId}/providers`, { method: 'POST', body: { providerId } });
+}
+
+export function unlinkAnimalProvider(animalId: number, providerId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/providers/${providerId}`, { method: 'DELETE' });
+}
+
 // --- Pension / hebergement ---
 
 export function listBoardings(animalId: number): Promise<BoardingEntry[]> {
