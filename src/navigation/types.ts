@@ -23,4 +23,5 @@ export type AppStackParamList = {
   HouseholdMembers: { householdId: number; householdName: string; inviteCode: string; isOwner: boolean };
   Account: undefined;
   Paywall: undefined;
+  PracticalInfo: undefined;
 };

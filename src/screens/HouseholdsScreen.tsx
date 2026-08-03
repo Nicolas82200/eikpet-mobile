@@ -27,6 +27,9 @@ export default function HouseholdsScreen({ navigation }: Props) {
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => navigation.navigate('PracticalInfo')}>
+            <Text style={styles.accountLink}>Infos pratiques</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Account')}>
             <Text style={styles.accountLink}>Mon compte</Text>
           </TouchableOpacity>

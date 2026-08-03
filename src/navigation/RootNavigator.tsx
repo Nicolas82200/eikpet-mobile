@@ -28,6 +28,7 @@ import ReportsScreen from '../screens/ReportsScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import RidingSessionsScreen from '../screens/RidingSessionsScreen';
 import ProvidersMapScreen from '../screens/ProvidersMapScreen';
+import PracticalInfoScreen from '../screens/PracticalInfoScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -122,6 +123,7 @@ function AppNavigator() {
       <AppStack.Screen name="Budget" component={BudgetScreen} options={{ title: 'Budget' }} />
       <AppStack.Screen name="RidingSessions" component={RidingSessionsScreen} options={{ title: 'Seances' }} />
       <AppStack.Screen name="ProvidersMap" component={ProvidersMapScreen} options={{ title: 'Carte' }} />
+      <AppStack.Screen name="PracticalInfo" component={PracticalInfoScreen} options={{ title: 'Infos pratiques' }} />
     </AppStack.Navigator>
   );
 }

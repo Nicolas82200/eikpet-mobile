@@ -4,9 +4,11 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +22,7 @@ interface Props {
 
 export default function AddModal({ visible, title, onClose, children }: Props) {
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -31,16 +34,22 @@ export default function AddModal({ visible, title, onClose, children }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         pointerEvents="box-none"
       >
-        {/* paddingBottom : sur Android en edge-to-edge, la barre de navigation systeme
-            (geste ou boutons) flotte au-dessus du contenu sans cette marge. */}
-        <View style={[styles.sheet, { paddingBottom: 20 + insets.bottom }]}>
+        {/* maxHeight : sur un formulaire long (suggestions ouvertes + chips + champs), le
+            contenu peut depasser l'ecran. Sans limite + scroll, le bas du formulaire devient
+            inaccessible (cf. retour utilisateur). */}
+        <View style={[styles.sheet, { maxHeight: windowHeight * 0.85 }]}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
             <Pressable onPress={onClose} hitSlop={10}>
               <Text style={styles.close}>Fermer</Text>
             </Pressable>
           </View>
-          {children}
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 20 + insets.bottom }}
+          >
+            {children}
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -50,7 +59,13 @@ export default function AddModal({ visible, title, onClose, children }: Props) {
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheetWrapper: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  sheet: { backgroundColor: 'white', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
+  sheet: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+  },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   title: { fontSize: 18, fontWeight: 'bold' },
   close: { color: '#B8863B', fontWeight: '600' },

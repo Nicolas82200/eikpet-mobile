@@ -191,7 +191,6 @@ export default function HealthEntriesScreen({ route }: Props) {
           onChange={setCustomTypeLabel}
           options={getPrecisionOptions(type, species)}
           placeholder={type === 'vaccin' ? 'Nom du vaccin (optionnel)' : 'Precision (optionnel)'}
-          autoFocus
         />
         <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
         <TimePickerInput value={scheduledTime} onChange={setScheduledTime} placeholder="Heure (optionnel)" />

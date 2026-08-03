@@ -14,9 +14,12 @@ export default function AutocompleteInput({ value, onChange, options, placeholde
   const [focused, setFocused] = useState(false);
 
   const query = value.trim().toLowerCase();
-  const suggestions = focused
-    ? options.filter((option) => option.toLowerCase().includes(query)).slice(0, 6)
-    : [];
+  // N'affiche les suggestions qu'une fois que l'utilisateur a commence a taper : sinon,
+  // la liste (jusqu'a 6 options) s'ouvre des le focus et masque le reste du formulaire.
+  const suggestions =
+    focused && query.length > 0
+      ? options.filter((option) => option.toLowerCase().includes(query)).slice(0, 6)
+      : [];
   const showSuggestions = suggestions.length > 0 && !(suggestions.length === 1 && suggestions[0].toLowerCase() === query);
 
   return (
