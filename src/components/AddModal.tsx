@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
   visible: boolean;
@@ -18,6 +19,8 @@ interface Props {
 }
 
 export default function AddModal({ visible, title, onClose, children }: Props) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -28,7 +31,9 @@ export default function AddModal({ visible, title, onClose, children }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         pointerEvents="box-none"
       >
-        <View style={styles.sheet}>
+        {/* paddingBottom : sur Android en edge-to-edge, la barre de navigation systeme
+            (geste ou boutons) flotte au-dessus du contenu sans cette marge. */}
+        <View style={[styles.sheet, { paddingBottom: 20 + insets.bottom }]}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
             <Pressable onPress={onClose} hitSlop={10}>
