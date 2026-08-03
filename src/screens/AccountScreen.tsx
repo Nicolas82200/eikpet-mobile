@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   planLabel: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, color: '#3A3226' },
   button: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
   buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
   dangerZone: { marginTop: 32, borderTopWidth: 1, borderTopColor: '#EDE3D0', paddingTop: 20 },

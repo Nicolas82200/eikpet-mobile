@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   deleteLink: { color: '#B3452C', fontWeight: '600' },
   empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
   label: { color: '#8A7B68', marginBottom: 8, marginTop: 4 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, color: '#3A3226' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
   chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
