@@ -21,6 +21,7 @@ import type {
   SubscriptionStatus,
   SurgicalHistoryEntry,
   Treatment,
+  VaccinationScheduleStep,
   WeightEntry,
 } from '../types/api';
 
@@ -202,6 +203,11 @@ export function deleteSurgicalHistory(animalId: number, entryId: number): Promis
 
 export function listHealthEntries(animalId: number): Promise<HealthEntry[]> {
   return apiRequest(`/animals/${animalId}/health-entries`);
+}
+
+/** Protocole de primo-vaccination suggere (chiot/chaton uniquement) ; undefined si non applicable. */
+export function getVaccinationSchedule(animalId: number): Promise<VaccinationScheduleStep[] | undefined> {
+  return apiRequest(`/animals/${animalId}/vaccination-schedule`);
 }
 
 /** 3.7 Comptes-rendus : historique consolide, reserve a l'abonnement. */

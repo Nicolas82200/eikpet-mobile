@@ -185,6 +185,11 @@ export interface RidingSession {
   price: number | null;
 }
 
+export interface VaccinationScheduleStep {
+  label: string;
+  targetDate: string;
+}
+
 export interface WeightEntry {
   id: number;
   animalId: number;
