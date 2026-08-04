@@ -22,6 +22,8 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
   const [scheduledDate, setScheduledDate] = useState('');
   const [price, setPrice] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [editingSession, setEditingSession] = useState<RidingSession | null>(null);
+  const [report, setReport] = useState('');
 
   const load = useCallback(() => {
     return api.listRidingSessions(animalId).then(setSessions).catch(showLoadError);
@@ -34,6 +36,7 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
     setType('dressage');
     setScheduledDate('');
     setPrice('');
+    setReport('');
   };
 
   const onCreate = async () => {
@@ -55,6 +58,34 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
       } else {
         showError(error);
       }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (session: RidingSession) => {
+    setEditingSession(session);
+    setType(session.type);
+    setScheduledDate(session.scheduledDate.slice(0, 10));
+    setPrice(session.price != null ? String(session.price) : '');
+    setReport(session.report ?? '');
+  };
+
+  const onSaveEdit = async () => {
+    if (!editingSession || !scheduledDate) return;
+    setSubmitting(true);
+    try {
+      await api.updateRidingSession(animalId, editingSession.id, {
+        type,
+        scheduledDate,
+        price: price ? parseFloat(price) : undefined,
+        report: report.trim() || undefined,
+      });
+      resetForm();
+      setEditingSession(null);
+      load();
+    } catch (error) {
+      showError(error);
     } finally {
       setSubmitting(false);
     }
@@ -117,6 +148,9 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
                   {item.status === 'fait' ? 'Faite' : 'Prevue'}
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => openEditModal(item)}>
+                <Text style={styles.editLink}>{item.report ? 'Modifier' : 'Compte-rendu'}</Text>
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => onDelete(item)}>
                 <Text style={styles.deleteLink}>Supprimer</Text>
               </TouchableOpacity>
@@ -162,6 +196,51 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
           <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Ajouter'}</Text>
         </TouchableOpacity>
       </AddModal>
+
+      <AddModal
+        visible={!!editingSession}
+        title="Modifier la seance"
+        onClose={() => {
+          setEditingSession(null);
+          resetForm();
+        }}
+      >
+        <Text style={styles.label}>Type</Text>
+        <View style={styles.chipRow}>
+          {RIDING_SESSION_TYPES.map((t) => (
+            <TouchableOpacity
+              key={t.value}
+              style={[styles.chip, type === t.value && styles.chipActive]}
+              onPress={() => setType(t.value)}
+            >
+              <Text style={type === t.value ? styles.chipTextActive : styles.chipText}>{t.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Date</Text>
+        <DatePickerInput value={scheduledDate} onChange={setScheduledDate} />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Prix (€)"
+          keyboardType="decimal-pad"
+          value={price}
+          onChangeText={setPrice}
+        />
+
+        <TextInput
+          style={[styles.input, styles.multiline]}
+          placeholder="Compte-rendu (optionnel)"
+          value={report}
+          onChangeText={setReport}
+          multiline
+        />
+
+        <TouchableOpacity style={styles.submitButton} onPress={onSaveEdit} disabled={submitting || !scheduledDate}>
+          <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</Text>
+        </TouchableOpacity>
+      </AddModal>
     </>
   );
 }
@@ -178,6 +257,7 @@ const styles = StyleSheet.create({
   cardActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   statusDone: { color: '#2E7D32', fontWeight: '600' },
   statusPlanned: { color: '#B8863B', fontWeight: '600' },
+  editLink: { color: '#B8863B', fontWeight: '600' },
   deleteLink: { color: '#B3452C', fontWeight: '600' },
   empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
   label: { color: '#8A7B68', marginBottom: 8, marginTop: 4 },
@@ -187,6 +267,7 @@ const styles = StyleSheet.create({
   chipText: { color: '#3A3226' },
   chipTextActive: { color: 'white', fontWeight: '600' },
   input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, marginTop: 12, backgroundColor: '#EFE2C4', color: '#000000' },
+  multiline: { minHeight: 80, textAlignVertical: 'top' },
   submitButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 8 },
   submitButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });
