@@ -157,7 +157,7 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
             </View>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Aucune seance pour l'instant</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Aucune seance pour l&apos;instant</Text>}
       />
 
       <AddModal

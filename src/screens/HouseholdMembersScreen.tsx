@@ -169,7 +169,7 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
           )}
 
           <View style={styles.codeCard}>
-            <Text style={styles.codeLabel}>Code d'invitation</Text>
+            <Text style={styles.codeLabel}>Code d&apos;invitation</Text>
             <Text style={styles.code}>{inviteCode}</Text>
             <Text style={styles.codeHint}>
               Partage ce code aux autres membres du foyer : ils pourront le saisir lors de leur inscription.

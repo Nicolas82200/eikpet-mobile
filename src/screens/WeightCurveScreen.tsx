@@ -138,7 +138,7 @@ export default function WeightCurveScreen({ route, navigation }: Props) {
             </TouchableOpacity>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Aucune pesee enregistree pour l'instant</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Aucune pesee enregistree pour l&apos;instant</Text>}
       />
 
       <AddModal

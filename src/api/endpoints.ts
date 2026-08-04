@@ -1,8 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { apiRequest, apiUpload } from './client';
 import { API_BASE_URL } from './config';
-import { saveTokens, clearTokens, getAccessToken } from '../auth/token-storage';
-import { getRefreshToken } from '../auth/token-storage';
+import { saveTokens, clearTokens, getAccessToken , getRefreshToken } from '../auth/token-storage';
 import type {
   Animal,
   AnimalBudget,

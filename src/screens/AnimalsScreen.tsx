@@ -106,7 +106,7 @@ export default function AnimalsScreen({ route, navigation }: Props) {
             </Text>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Aucun animal pour l'instant</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Aucun animal pour l&apos;instant</Text>}
       />
 
       <AddModal visible={modalVisible} title="Ajouter un animal" onClose={() => setModalVisible(false)}>

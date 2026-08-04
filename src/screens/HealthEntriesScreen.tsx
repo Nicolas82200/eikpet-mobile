@@ -211,7 +211,7 @@ export default function HealthEntriesScreen({ route }: Props) {
             </View>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l'instant</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l&apos;instant</Text>}
       />
 
       <AddModal visible={modalVisible} title="Ajouter une entree" onClose={() => setModalVisible(false)}>

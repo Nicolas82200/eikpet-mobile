@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { usePremium } from '../subscriptions/PurchasesContext';
 import { showError } from '../utils/errorHandling';
