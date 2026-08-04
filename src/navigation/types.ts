@@ -15,8 +15,14 @@ export type AppStackParamList = {
   Documents: { householdId: number; animalId?: number };
   Providers: { householdId: number; householdName: string };
   Boardings: { animalId: number; animalName: string };
+  Reports: { animalId: number; animalName: string };
+  Budget: { householdId: number; householdName: string };
+  RidingSessions: { animalId: number; animalName: string };
+  WeightCurve: { animalId: number; animalName: string };
+  ProvidersMap: { householdId: number; householdName: string };
   AppointmentFollowUp: { animalId: number; entryId: number };
   HouseholdMembers: { householdId: number; householdName: string; inviteCode: string; isOwner: boolean };
   Account: undefined;
   Paywall: undefined;
+  PracticalInfo: undefined;
 };

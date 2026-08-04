@@ -74,6 +74,12 @@ export default function AnimalsScreen({ route, navigation }: Props) {
             >
               <Text style={styles.calendarLinkText}>Repertoire des intervenants</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.calendarLink}
+              onPress={() => navigation.navigate('Budget', { householdId, householdName })}
+            >
+              <Text style={styles.calendarLinkText}>Voir le budget</Text>
+            </TouchableOpacity>
           </>
         }
         renderItem={({ item }) => (
@@ -147,7 +153,7 @@ const styles = StyleSheet.create({
   tileTitle: { fontSize: 16, fontWeight: '700', color: '#3A3226' },
   tileSubtitle: { color: '#8A7B68', marginTop: 2, fontSize: 12 },
   empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
   speciesField: { marginBottom: 16 },
   addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },

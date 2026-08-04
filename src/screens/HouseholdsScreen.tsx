@@ -27,6 +27,9 @@ export default function HouseholdsScreen({ navigation }: Props) {
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => navigation.navigate('PracticalInfo')}>
+            <Text style={styles.accountLink}>Infos pratiques</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Account')}>
             <Text style={styles.accountLink}>Mon compte</Text>
           </TouchableOpacity>
@@ -208,7 +211,7 @@ const styles = StyleSheet.create({
   modeChipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
   modeChipText: { color: '#3A3226', textAlign: 'center', fontWeight: '600' },
   modeChipTextActive: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
   addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });

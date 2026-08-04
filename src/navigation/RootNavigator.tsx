@@ -24,6 +24,12 @@ import HouseholdMembersScreen from '../screens/HouseholdMembersScreen';
 import PaywallScreen from '../screens/PaywallScreen';
 import ProvidersScreen from '../screens/ProvidersScreen';
 import BoardingsScreen from '../screens/BoardingsScreen';
+import ReportsScreen from '../screens/ReportsScreen';
+import BudgetScreen from '../screens/BudgetScreen';
+import RidingSessionsScreen from '../screens/RidingSessionsScreen';
+import ProvidersMapScreen from '../screens/ProvidersMapScreen';
+import PracticalInfoScreen from '../screens/PracticalInfoScreen';
+import WeightCurveScreen from '../screens/WeightCurveScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -114,6 +120,12 @@ function AppNavigator() {
       <AppStack.Screen name="Paywall" component={PaywallScreen} options={{ title: 'Abonnement' }} />
       <AppStack.Screen name="Providers" component={ProvidersScreen} options={{ title: 'Intervenants' }} />
       <AppStack.Screen name="Boardings" component={BoardingsScreen} options={{ title: 'Pension' }} />
+      <AppStack.Screen name="Reports" component={ReportsScreen} options={{ title: 'Comptes-rendus' }} />
+      <AppStack.Screen name="Budget" component={BudgetScreen} options={{ title: 'Budget' }} />
+      <AppStack.Screen name="RidingSessions" component={RidingSessionsScreen} options={{ title: 'Seances' }} />
+      <AppStack.Screen name="ProvidersMap" component={ProvidersMapScreen} options={{ title: 'Carte' }} />
+      <AppStack.Screen name="PracticalInfo" component={PracticalInfoScreen} options={{ title: 'Infos pratiques' }} />
+      <AppStack.Screen name="WeightCurve" component={WeightCurveScreen} options={{ title: 'Courbe de poids' }} />
     </AppStack.Navigator>
   );
 }

@@ -14,9 +14,12 @@ export default function AutocompleteInput({ value, onChange, options, placeholde
   const [focused, setFocused] = useState(false);
 
   const query = value.trim().toLowerCase();
-  const suggestions = focused
-    ? options.filter((option) => option.toLowerCase().includes(query)).slice(0, 6)
-    : [];
+  // N'affiche les suggestions qu'une fois que l'utilisateur a commence a taper : sinon,
+  // la liste (jusqu'a 6 options) s'ouvre des le focus et masque le reste du formulaire.
+  const suggestions =
+    focused && query.length > 0
+      ? options.filter((option) => option.toLowerCase().includes(query)).slice(0, 6)
+      : [];
   const showSuggestions = suggestions.length > 0 && !(suggestions.length === 1 && suggestions[0].toLowerCase() === query);
 
   return (
@@ -52,7 +55,7 @@ export default function AutocompleteInput({ value, onChange, options, placeholde
 
 const styles = StyleSheet.create({
   wrapper: { marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, backgroundColor: 'white' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, backgroundColor: '#EFE2C4', color: '#000000' },
   suggestions: {
     borderWidth: 1,
     borderColor: '#E3D8C4',

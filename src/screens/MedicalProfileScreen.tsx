@@ -46,6 +46,8 @@ export default function MedicalProfileScreen({ route }: Props) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const loadedRef = useRef(false);
   const skipNextAutoSaveRef = useRef(false);
+  const profileRef = useRef(profile);
+  const pendingSaveRef = useRef(false);
 
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [treatmentName, setTreatmentName] = useState('');
@@ -75,6 +77,10 @@ export default function MedicalProfileScreen({ route }: Props) {
 
   useFocusEffect(load);
 
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
   // Enregistrement automatique : chaque changement (y compris le choix "Aucun(e)")
   // est persiste sans attendre un clic sur un bouton "Enregistrer" distant.
   useEffect(() => {
@@ -83,10 +89,12 @@ export default function MedicalProfileScreen({ route }: Props) {
       skipNextAutoSaveRef.current = false;
       return;
     }
+    pendingSaveRef.current = true;
     setSaveStatus('saving');
     const timeout = setTimeout(async () => {
       try {
-        await api.upsertMedicalProfile(animalId, profile);
+        await api.upsertMedicalProfile(animalId, profileRef.current);
+        pendingSaveRef.current = false;
         setSaveStatus('saved');
       } catch (error) {
         setSaveStatus('error');
@@ -95,6 +103,17 @@ export default function MedicalProfileScreen({ route }: Props) {
     }, 500);
     return () => clearTimeout(timeout);
   }, [profile, animalId]);
+
+  // Si l'utilisateur quitte l'ecran avant la fin du debounce ci-dessus (ex: retour rapide
+  // apres avoir tape le veto referent), le clearTimeout annulerait silencieusement la
+  // derniere modification. On la sauvegarde immediatement au demontage dans ce cas.
+  useEffect(() => {
+    return () => {
+      if (pendingSaveRef.current) {
+        api.upsertMedicalProfile(animalId, profileRef.current).catch(() => undefined);
+      }
+    };
+  }, [animalId]);
 
   const setField = (key: keyof MedicalProfile, value: string) => {
     setProfile((prev) => ({ ...prev, [key]: value }));
@@ -440,7 +459,7 @@ const styles = StyleSheet.create({
   saveStatusTextOk: { color: '#B8863B', fontSize: 13, fontWeight: '600' },
   saveStatusTextError: { color: '#B3452C', fontSize: 13, fontWeight: '600' },
   label: { color: '#8A7B68', marginBottom: 4, marginTop: 8 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: 'white' },
+  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: '#EFE2C4', color: '#000000' },
   accordionAddRow: { alignItems: 'flex-end', marginBottom: 8 },
   listCard: { backgroundColor: 'white', borderRadius: 8, padding: 12, marginBottom: 8 },
   listCardTitle: { fontWeight: '600' },

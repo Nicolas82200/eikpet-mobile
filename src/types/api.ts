@@ -136,11 +136,28 @@ export interface Provider {
   phone: string | null;
   email: string | null;
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   notes: string | null;
 }
 
 export type BoardingPeriodicity = 'unique' | 'hebdomadaire' | 'mensuel' | 'annuel';
 export type BoardingStatus = 'regle' | 'non_regle';
+
+export interface HouseholdBudget {
+  householdId: number;
+  total: number;
+  byAnimal: { animalId: number; animalName: string; total: number }[];
+}
+
+export interface AnimalBudget {
+  animalId: number;
+  healthTotal: number;
+  boardingTotal: number;
+  ridingSessionsTotal: number;
+  total: number;
+  byCategory: { type: HealthEntryType; total: number }[];
+}
 
 export interface BoardingEntry {
   id: number;
@@ -151,5 +168,32 @@ export interface BoardingEntry {
   periodicity: BoardingPeriodicity;
   dueDate: string;
   status: BoardingStatus;
+  notes: string | null;
+}
+
+export type RidingSessionType = 'dressage' | 'osteo' | 'entrainement' | 'autre';
+export type RidingSessionStatus = 'prevu' | 'fait';
+
+export interface RidingSession {
+  id: number;
+  animalId: number;
+  type: RidingSessionType;
+  customTypeLabel: string | null;
+  scheduledDate: string;
+  status: RidingSessionStatus;
+  report: string | null;
+  price: number | null;
+}
+
+export interface VaccinationScheduleStep {
+  label: string;
+  targetDate: string;
+}
+
+export interface WeightEntry {
+  id: number;
+  animalId: number;
+  weightKg: number;
+  recordedDate: string;
   notes: string | null;
 }

@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
-    backgroundColor: 'white',
+    backgroundColor: '#EFE2C4',
   },
   valueText: { color: '#000' },
   placeholderText: { color: '#A79A85' },

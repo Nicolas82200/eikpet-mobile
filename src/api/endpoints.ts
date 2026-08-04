@@ -5,19 +5,24 @@ import { saveTokens, clearTokens, getAccessToken } from '../auth/token-storage';
 import { getRefreshToken } from '../auth/token-storage';
 import type {
   Animal,
+  AnimalBudget,
   AuthTokens,
   BoardingEntry,
   CalendarEntry,
   DocumentCategory,
   DocumentRecord,
   Household,
+  HouseholdBudget,
   HouseholdMember,
   HealthEntry,
   MedicalProfile,
   Provider,
+  RidingSession,
   SubscriptionStatus,
   SurgicalHistoryEntry,
   Treatment,
+  VaccinationScheduleStep,
+  WeightEntry,
 } from '../types/api';
 
 // --- Auth ---
@@ -200,6 +205,16 @@ export function listHealthEntries(animalId: number): Promise<HealthEntry[]> {
   return apiRequest(`/animals/${animalId}/health-entries`);
 }
 
+/** Protocole de primo-vaccination suggere (chiot/chaton uniquement) ; undefined si non applicable. */
+export function getVaccinationSchedule(animalId: number): Promise<VaccinationScheduleStep[] | undefined> {
+  return apiRequest(`/animals/${animalId}/vaccination-schedule`);
+}
+
+/** 3.7 Comptes-rendus : historique consolide, reserve a l'abonnement. */
+export function listReports(animalId: number): Promise<HealthEntry[]> {
+  return apiRequest(`/animals/${animalId}/reports`);
+}
+
 export function createHealthEntry(
   animalId: number,
   input: Partial<HealthEntry> & { recurrenceMonths?: number },
@@ -284,6 +299,24 @@ export function deleteProvider(providerId: number): Promise<void> {
   return apiRequest(`/providers/${providerId}`, { method: 'DELETE' });
 }
 
+/** 3.6 V3 : intervenants geocodes, pour la carte interactive (reserve a l'abonnement). */
+export function listProvidersForMap(householdId: number): Promise<Provider[]> {
+  return apiRequest(`/households/${householdId}/providers/map`);
+}
+
+/** Intervenants lies a un animal precis (un intervenant peut etre associe a plusieurs animaux). */
+export function listAnimalProviders(animalId: number): Promise<Provider[]> {
+  return apiRequest(`/animals/${animalId}/providers`);
+}
+
+export function linkAnimalProvider(animalId: number, providerId: number): Promise<Provider[]> {
+  return apiRequest(`/animals/${animalId}/providers`, { method: 'POST', body: { providerId } });
+}
+
+export function unlinkAnimalProvider(animalId: number, providerId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/providers/${providerId}`, { method: 'DELETE' });
+}
+
 // --- Pension / hebergement ---
 
 export function listBoardings(animalId: number): Promise<BoardingEntry[]> {
@@ -307,6 +340,58 @@ export function updateBoarding(
 
 export function deleteBoarding(animalId: number, boardingId: number): Promise<void> {
   return apiRequest(`/animals/${animalId}/boardings/${boardingId}`, { method: 'DELETE' });
+}
+
+// --- Seances chevaux ---
+
+export function listRidingSessions(animalId: number): Promise<RidingSession[]> {
+  return apiRequest(`/animals/${animalId}/riding-sessions`);
+}
+
+export function createRidingSession(
+  animalId: number,
+  input: Partial<Omit<RidingSession, 'id' | 'animalId'>>,
+): Promise<RidingSession> {
+  return apiRequest(`/animals/${animalId}/riding-sessions`, { method: 'POST', body: input });
+}
+
+export function updateRidingSession(
+  animalId: number,
+  sessionId: number,
+  input: Partial<Omit<RidingSession, 'id' | 'animalId'>>,
+): Promise<RidingSession> {
+  return apiRequest(`/animals/${animalId}/riding-sessions/${sessionId}`, { method: 'PATCH', body: input });
+}
+
+export function deleteRidingSession(animalId: number, sessionId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/riding-sessions/${sessionId}`, { method: 'DELETE' });
+}
+
+// --- Courbe de poids ---
+
+export function listWeightEntries(animalId: number): Promise<WeightEntry[]> {
+  return apiRequest(`/animals/${animalId}/weight-entries`);
+}
+
+export function createWeightEntry(
+  animalId: number,
+  input: { weightKg: number; recordedDate: string; notes?: string },
+): Promise<WeightEntry> {
+  return apiRequest(`/animals/${animalId}/weight-entries`, { method: 'POST', body: input });
+}
+
+export function deleteWeightEntry(animalId: number, entryId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/weight-entries/${entryId}`, { method: 'DELETE' });
+}
+
+// --- Budget (3.9) ---
+
+export function getHouseholdBudget(householdId: number): Promise<HouseholdBudget> {
+  return apiRequest(`/households/${householdId}/budget`);
+}
+
+export function getAnimalBudget(animalId: number): Promise<AnimalBudget> {
+  return apiRequest(`/animals/${animalId}/budget`);
 }
 
 /** Telecharge le fichier dans le cache local et renvoie son URI (pour ouverture/partage). */
