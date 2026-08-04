@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  card: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
+  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '600', textTransform: 'capitalize' },
   cardDate: { color: '#8A7B68', marginTop: 2, marginBottom: 8 },
   cardReport: { color: '#3A3226' },

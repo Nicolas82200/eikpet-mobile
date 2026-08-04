@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   content: { padding: 16 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   title: { fontSize: 22, fontWeight: 'bold', flexShrink: 1, marginRight: 12 },
-  scheduleCard: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 16 },
+  scheduleCard: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 16 },
   scheduleTitle: { fontSize: 15, fontWeight: '700', color: '#3A3226' },
   scheduleSubtitle: { color: '#8A7B68', marginTop: 4, marginBottom: 10, fontSize: 12 },
   scheduleStep: {
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   scheduleStepLabel: { color: '#3A3226', fontWeight: '600' },
   scheduleStepDate: { color: '#8A7B68', marginTop: 2, fontSize: 12 },
   scheduleStepAdd: { color: '#B8863B', fontWeight: '600' },
-  card: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
+  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '600', textTransform: 'capitalize' },
   cardSubtitle: { color: '#8A7B68', marginTop: 4 },
   cardReport: { color: '#3A3226', marginTop: 6, fontStyle: 'italic' },

@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
   totalLabel: { color: '#8A7B68', textAlign: 'center', marginTop: 8 },
   totalAmount: { fontSize: 32, fontWeight: 'bold', color: '#B8863B', textAlign: 'center', marginBottom: 16 },
-  section: { backgroundColor: '#FAF6EF', borderRadius: 12, padding: 16, marginBottom: 12 },
+  section: { backgroundColor: '#EDE3D0', borderRadius: 12, padding: 16, marginBottom: 12 },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: '#3A3226', marginBottom: 8 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   line: { color: '#3A3226', textTransform: 'capitalize' },

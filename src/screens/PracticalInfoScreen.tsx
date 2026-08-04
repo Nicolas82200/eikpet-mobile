@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 32 },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 8 },
   intro: { color: '#8A7B68', marginBottom: 20 },
-  section: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
+  section: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10, color: '#3A3226' },
   itemRow: { flexDirection: 'row', marginBottom: 8 },
   bullet: { color: '#B8863B', marginRight: 8, fontWeight: '700' },
