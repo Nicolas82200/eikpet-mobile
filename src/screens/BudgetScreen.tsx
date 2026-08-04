@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -50,10 +50,13 @@ export default function BudgetScreen({ route, navigation }: Props) {
         </View>
       }
       renderItem={({ item }) => (
-        <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => navigation.navigate('AnimalBudget', { animalId: item.animalId, animalName: item.animalName })}
+        >
           <Text style={styles.cardTitle}>{item.animalName}</Text>
           <Text style={styles.cardAmount}>{formatEuros(item.total)}</Text>
-        </View>
+        </TouchableOpacity>
       )}
       ListEmptyComponent={<Text style={styles.empty}>Aucune depense enregistree pour l'instant</Text>}
     />
