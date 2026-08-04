@@ -197,3 +197,10 @@ export interface WeightEntry {
   recordedDate: string;
   notes: string | null;
 }
+
+export interface EmergencySheet {
+  animal: Animal;
+  medicalProfile: MedicalProfile | null;
+  treatments: Treatment[];
+  providers: Provider[];
+}
