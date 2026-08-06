@@ -10,8 +10,10 @@ import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import Accordion from '../components/Accordion';
 import AutocompleteInput from '../components/AutocompleteInput';
+import Card from '../components/Card';
 import NullableField from '../components/NullableField';
 import DatePickerInput from '../components/DatePickerInput';
+import PrimaryButton from '../components/PrimaryButton';
 import { scheduleTreatmentReminders, cancelTreatmentReminders } from '../notifications/localReminders';
 import { getProceduresForSpecies } from '../data/procedures';
 import { TREATMENT_TYPES } from '../data/treatmentTypes';
@@ -23,6 +25,7 @@ import { INSURANCE_PROVIDERS } from '../data/insuranceProviders';
 import { NONE_LABELS } from '../data/medicalFieldDefaults';
 import { getFieldState } from '../utils/fieldState';
 import { showError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MedicalProfile'>;
 
@@ -344,14 +347,14 @@ export default function MedicalProfileScreen({ route }: Props) {
               <AddIconButton onPress={() => setTreatmentModalVisible(true)} />
             </View>
             {treatments.map((t) => (
-              <View key={t.id} style={styles.listCard}>
+              <Card key={t.id} style={styles.listCard}>
                 <Text style={styles.listCardTitle}>{t.name}</Text>
                 {t.dosage && <Text style={styles.listCardSubtitle}>{t.dosage}</Text>}
                 {t.reminderTimes && <Text style={styles.listCardSubtitle}>Rappels : {t.reminderTimes}</Text>}
                 <TouchableOpacity onPress={() => onDeleteTreatment(t)}>
                   <Text style={styles.deleteLink}>Supprimer</Text>
                 </TouchableOpacity>
-              </View>
+              </Card>
             ))}
             {treatments.length === 0 && <Text style={styles.empty}>Aucun traitement en cours</Text>}
           </Accordion>
@@ -364,13 +367,13 @@ export default function MedicalProfileScreen({ route }: Props) {
               <AddIconButton onPress={() => setSurgicalModalVisible(true)} />
             </View>
             {surgicalHistory.map((s) => (
-              <View key={s.id} style={styles.listCard}>
+              <Card key={s.id} style={styles.listCard}>
                 <Text style={styles.listCardTitle}>{s.procedureName}</Text>
                 {s.performedOn && <Text style={styles.listCardSubtitle}>{s.performedOn}</Text>}
                 <TouchableOpacity onPress={() => onDeleteSurgicalHistory(s)}>
                   <Text style={styles.deleteLink}>Supprimer</Text>
                 </TouchableOpacity>
-              </View>
+              </Card>
             ))}
             {surgicalHistory.length === 0 && <Text style={styles.empty}>Aucun antecedent chirurgical</Text>}
           </Accordion>
@@ -425,9 +428,7 @@ export default function MedicalProfileScreen({ route }: Props) {
           </>
         )}
 
-        <TouchableOpacity style={styles.addButton} onPress={onAddTreatment}>
-          <Text style={styles.addButtonText}>Ajouter</Text>
-        </TouchableOpacity>
+        <PrimaryButton title="Ajouter" onPress={onAddTreatment} />
       </AddModal>
 
       <AddModal
@@ -443,34 +444,38 @@ export default function MedicalProfileScreen({ route }: Props) {
           autoFocus
         />
         <DatePickerInput value={performedOn} onChange={setPerformedOn} placeholder="Date de l'operation" />
-        <TouchableOpacity style={styles.addButton} onPress={onAddSurgicalHistory}>
-          <Text style={styles.addButtonText}>Ajouter</Text>
-        </TouchableOpacity>
+        <PrimaryButton title="Ajouter" onPress={onAddSurgicalHistory} />
       </AddModal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  saveStatusText: { color: '#A79A85', fontSize: 13 },
-  saveStatusTextOk: { color: '#B8863B', fontSize: 13, fontWeight: '600' },
-  saveStatusTextError: { color: '#B3452C', fontSize: 13, fontWeight: '600' },
-  label: { color: '#8A7B68', marginBottom: 4, marginTop: 8 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: '#EFE2C4', color: '#000000' },
-  accordionAddRow: { alignItems: 'flex-end', marginBottom: 8 },
-  listCard: { backgroundColor: 'white', borderRadius: 8, padding: 12, marginBottom: 8 },
+  container: { padding: spacing.lg },
+  title: { ...typography.screenTitle, fontSize: 22 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
+  saveStatusText: { color: colors.textMuted, fontSize: 13 },
+  saveStatusTextOk: { color: colors.accent, fontSize: 13, fontWeight: '600' },
+  saveStatusTextError: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+  label: { color: colors.textSecondary, marginBottom: spacing.xs, marginTop: spacing.sm },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  accordionAddRow: { alignItems: 'flex-end', marginBottom: spacing.sm },
+  listCard: { backgroundColor: colors.surface, marginBottom: spacing.sm, padding: spacing.md },
   listCardTitle: { fontWeight: '600' },
-  listCardSubtitle: { color: '#8A7B68', marginTop: 2 },
-  deleteLink: { color: '#B3452C', fontWeight: '600', marginTop: 6 },
-  empty: { color: '#8A7B68' },
-  addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  chipText: { color: '#3A3226' },
+  listCardSubtitle: { color: colors.textSecondary, marginTop: 2 },
+  deleteLink: { color: colors.danger, fontWeight: '600', marginTop: spacing.xs },
+  empty: { color: colors.textSecondary },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { color: colors.textPrimary },
   chipTextActive: { color: 'white', fontWeight: '600' },
 });

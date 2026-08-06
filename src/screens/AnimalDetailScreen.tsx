@@ -9,9 +9,11 @@ import type { Animal, AnimalSex, HealthEntry, MedicalProfile, Provider } from '.
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import Accordion from '../components/Accordion';
 import AutocompleteInput from '../components/AutocompleteInput';
+import Card from '../components/Card';
 import DatePickerInput from '../components/DatePickerInput';
 import AuthenticatedImage from '../components/AuthenticatedImage';
 import LoadingScreen from '../components/LoadingScreen';
+import PrimaryButton from '../components/PrimaryButton';
 import WarningBanner from '../components/WarningBanner';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
@@ -21,6 +23,7 @@ import { getProviderTypeLabel } from '../data/providerTypes';
 import { getAnimalWarnings } from '../utils/animalWarnings';
 import { showError, showLoadError } from '../utils/errorHandling';
 import { isEquine } from '../utils/species';
+import { cardShadow, colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AnimalDetail'>;
 
@@ -260,9 +263,13 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
             onChangeText={(v) => setForm((f) => ({ ...f, currentWeightKg: v ? parseFloat(v) : undefined }))}
           />
 
-          <TouchableOpacity style={styles.saveButton} onPress={onSave} disabled={saving}>
-            <Text style={styles.saveButtonText}>{saving ? 'Enregistrement...' : 'Enregistrer le profil'}</Text>
-          </TouchableOpacity>
+          <PrimaryButton
+            title={saving ? 'Enregistrement...' : 'Enregistrer le profil'}
+            onPress={onSave}
+            disabled={saving}
+            loading={saving}
+            style={styles.saveButton}
+          />
         </Accordion>
 
         <Accordion title="Intervenants" subtitle={linkedProviders.length > 0 ? `${linkedProviders.length} associe(s)` : 'Aucun'}>
@@ -270,13 +277,13 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
             <AddIconButton onPress={() => setProviderPickerVisible(true)} />
           </View>
           {linkedProviders.map((provider) => (
-            <View key={provider.id} style={styles.listCard}>
+            <Card key={provider.id} style={styles.listCard}>
               <Text style={styles.listCardTitle}>{provider.name}</Text>
               <Text style={styles.listCardSubtitle}>{getProviderTypeLabel(provider.type)}</Text>
               <TouchableOpacity onPress={() => onUnlinkProvider(provider)}>
                 <Text style={styles.deleteLink}>Retirer</Text>
               </TouchableOpacity>
-            </View>
+            </Card>
           ))}
           {linkedProviders.length === 0 && (
             <Text style={styles.emptyHint}>Aucun intervenant associe a cet animal pour l&apos;instant.</Text>
@@ -286,6 +293,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
         <View style={styles.dashboardGrid}>
           <TouchableOpacity
             style={styles.dashboardTile}
+            activeOpacity={0.85}
             onPress={() => navigation.navigate('EmergencySheet', { animalId, animalName: animal.name })}
           >
             <Text style={styles.dashboardTileIcon}>🚨</Text>
@@ -294,6 +302,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dashboardTile}
+            activeOpacity={0.85}
             onPress={() =>
               navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
             }
@@ -304,6 +313,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dashboardTile}
+            activeOpacity={0.85}
             onPress={() =>
               navigation.navigate('HealthEntries', { animalId, animalName: animal.name, species: animal.species })
             }
@@ -314,6 +324,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dashboardTile}
+            activeOpacity={0.85}
             onPress={() => navigation.navigate('Documents', { householdId, animalId })}
           >
             <Text style={styles.dashboardTileIcon}>📄</Text>
@@ -322,6 +333,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dashboardTile}
+            activeOpacity={0.85}
             onPress={() => navigation.navigate('Boardings', { animalId, animalName: animal.name })}
           >
             <Text style={styles.dashboardTileIcon}>🏠</Text>
@@ -330,6 +342,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dashboardTile}
+            activeOpacity={0.85}
             onPress={() => navigation.navigate('Reports', { animalId, animalName: animal.name })}
           >
             <Text style={styles.dashboardTileIcon}>📝</Text>
@@ -339,6 +352,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           {isEquine(animal.species) && (
             <TouchableOpacity
               style={styles.dashboardTile}
+              activeOpacity={0.85}
               onPress={() => navigation.navigate('RidingSessions', { animalId, animalName: animal.name })}
             >
               <Text style={styles.dashboardTileIcon}>🐎</Text>
@@ -348,6 +362,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           )}
           <TouchableOpacity
             style={styles.dashboardTile}
+            activeOpacity={0.85}
             onPress={() => navigation.navigate('WeightCurve', { animalId, animalName: animal.name })}
           >
             <Text style={styles.dashboardTileIcon}>⚖️</Text>
@@ -375,13 +390,11 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           </Text>
         ) : (
           unlinkedProviders.map((provider) => (
-            <TouchableOpacity
-              key={provider.id}
-              style={styles.listCard}
-              onPress={() => onLinkProvider(provider)}
-            >
-              <Text style={styles.listCardTitle}>{provider.name}</Text>
-              <Text style={styles.listCardSubtitle}>{getProviderTypeLabel(provider.type)}</Text>
+            <TouchableOpacity key={provider.id} onPress={() => onLinkProvider(provider)}>
+              <Card style={styles.listCard}>
+                <Text style={styles.listCardTitle}>{provider.name}</Text>
+                <Text style={styles.listCardSubtitle}>{getProviderTypeLabel(provider.type)}</Text>
+              </Card>
             </TouchableOpacity>
           ))
         )}
@@ -391,53 +404,60 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
-  subtitle: { color: '#8A7B68', textAlign: 'center', marginBottom: 16 },
-  photoContainer: { alignSelf: 'center', marginBottom: 12 },
-  photo: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#EDE3D0' },
+  container: { padding: spacing.lg },
+  title: { ...typography.screenTitle, textAlign: 'center' },
+  subtitle: { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.lg },
+  photoContainer: { alignSelf: 'center', marginBottom: spacing.md },
+  photo: { width: 140, height: 140, borderRadius: 70, backgroundColor: colors.divider },
   photoPlaceholder: {
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: '#FAF6EF',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#E3D8C4',
+    borderColor: colors.border,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  photoPlaceholderText: { color: '#8A7B68', textAlign: 'center', paddingHorizontal: 8 },
-  photoUploading: { textAlign: 'center', color: '#8A7B68', marginTop: 6 },
-  label: { color: '#8A7B68', marginBottom: 4, marginTop: 10 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, backgroundColor: '#EFE2C4', color: '#000000' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 14 },
-  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  chipText: { color: '#3A3226' },
+  photoPlaceholderText: { color: colors.textSecondary, textAlign: 'center', paddingHorizontal: spacing.sm },
+  photoUploading: { textAlign: 'center', color: colors.textSecondary, marginTop: spacing.xs },
+  label: { color: colors.textSecondary, marginBottom: spacing.xs, marginTop: spacing.md },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { color: colors.textPrimary },
   chipTextActive: { color: 'white', fontWeight: '600' },
-  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  saveButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 12, marginTop: 16 },
-  saveButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  dashboardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 16 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xs },
+  saveButton: { marginTop: spacing.lg },
+  dashboardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.lg },
   dashboardTile: {
     flexBasis: '47%',
     flexGrow: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#E3D8C4',
+    borderColor: colors.border,
+    ...cardShadow,
   },
-  dashboardTileIcon: { fontSize: 22, marginBottom: 6 },
-  dashboardTileTitle: { fontSize: 16, fontWeight: '700', color: '#3A3226' },
-  dashboardTileSubtitle: { color: '#8A7B68', marginTop: 4, fontSize: 12 },
-  deleteButton: { padding: 12, marginTop: 8, marginBottom: 32 },
-  deleteButtonText: { color: '#B3452C', textAlign: 'center', fontWeight: '600' },
-  accordionAddRow: { alignItems: 'flex-end', marginBottom: 8 },
-  listCard: { backgroundColor: 'white', borderRadius: 8, padding: 12, marginBottom: 8 },
+  dashboardTileIcon: { fontSize: 22, marginBottom: spacing.xs },
+  dashboardTileTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  dashboardTileSubtitle: { color: colors.textSecondary, marginTop: spacing.xs, fontSize: 12 },
+  deleteButton: { padding: spacing.md, marginTop: spacing.sm, marginBottom: spacing.xxl },
+  deleteButtonText: { color: colors.danger, textAlign: 'center', fontWeight: '600' },
+  accordionAddRow: { alignItems: 'flex-end', marginBottom: spacing.sm },
+  listCard: { backgroundColor: colors.surface, marginBottom: spacing.sm, padding: spacing.md },
   listCardTitle: { fontWeight: '600' },
-  listCardSubtitle: { color: '#8A7B68', marginTop: 2 },
-  deleteLink: { color: '#B3452C', fontWeight: '600', marginTop: 6 },
-  emptyHint: { color: '#8A7B68' },
+  listCardSubtitle: { color: colors.textSecondary, marginTop: 2 },
+  deleteLink: { color: colors.danger, fontWeight: '600', marginTop: spacing.xs },
+  emptyHint: { color: colors.textSecondary },
 });

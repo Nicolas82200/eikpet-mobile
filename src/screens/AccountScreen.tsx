@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import Card from '../components/Card';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AddModal from '../components/AddModal';
+import PrimaryButton from '../components/PrimaryButton';
 import * as api from '../api/endpoints';
 import { useAuth } from '../auth/AuthContext';
 import { usePremium } from '../subscriptions/PurchasesContext';
 import { showError } from '../utils/errorHandling';
 import type { AppStackParamList } from '../navigation/types';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Account'>;
 
@@ -69,14 +72,10 @@ export default function AccountScreen({ navigation }: Props) {
     <>
       <KeyboardAvoidingScreen>
         <View style={styles.container}>
-          <View style={styles.planCard}>
+          <Card style={styles.planCard}>
             <Text style={styles.planLabel}>{isPremium ? 'Abonnement premium actif' : 'Plan gratuit'}</Text>
-            {!isPremium && (
-              <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Paywall')}>
-                <Text style={styles.buttonText}>Passer premium</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+            {!isPremium && <PrimaryButton title="Passer premium" onPress={() => navigation.navigate('Paywall')} />}
+          </Card>
 
           <Text style={styles.title}>Changer le mot de passe</Text>
           <TextInput
@@ -93,21 +92,23 @@ export default function AccountScreen({ navigation }: Props) {
             value={newPassword}
             onChangeText={setNewPassword}
           />
-          <TouchableOpacity style={styles.button} onPress={onSubmit} disabled={submitting}>
-            <Text style={styles.buttonText}>{submitting ? 'Enregistrement...' : 'Changer le mot de passe'}</Text>
-          </TouchableOpacity>
+          <PrimaryButton
+            title={submitting ? 'Enregistrement...' : 'Changer le mot de passe'}
+            onPress={onSubmit}
+            disabled={submitting}
+            loading={submitting}
+          />
 
           <View style={styles.dangerZone}>
             <Text style={styles.dangerTitle}>Zone dangereuse</Text>
             <Text style={styles.dangerHint}>
               Supprime definitivement ton compte et tous les foyers dont tu es proprietaire.
             </Text>
-            <TouchableOpacity
-              style={styles.dangerButton}
+            <PrimaryButton
+              title="Supprimer mon compte"
               onPress={() => setDeleteModalVisible(true)}
-            >
-              <Text style={styles.dangerButtonText}>Supprimer mon compte</Text>
-            </TouchableOpacity>
+              variant="dangerOutline"
+            />
           </View>
         </View>
       </KeyboardAvoidingScreen>
@@ -131,30 +132,33 @@ export default function AccountScreen({ navigation }: Props) {
           onChangeText={setDeletePassword}
           autoFocus
         />
-        <TouchableOpacity style={styles.dangerButton} onPress={onConfirmDelete} disabled={deleting}>
-          <Text style={styles.dangerButtonText}>{deleting ? 'Suppression...' : 'Continuer'}</Text>
-        </TouchableOpacity>
+        <PrimaryButton
+          title={deleting ? 'Suppression...' : 'Continuer'}
+          onPress={onConfirmDelete}
+          disabled={deleting}
+          loading={deleting}
+          variant="danger"
+        />
       </AddModal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  planCard: {
-    backgroundColor: '#FBF5EA',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 24,
+  container: { padding: spacing.lg },
+  planCard: { marginBottom: spacing.xl, gap: spacing.md },
+  planLabel: { fontSize: 16, fontWeight: '700', marginBottom: spacing.xs },
+  title: { ...typography.screenTitle, fontSize: 22, marginBottom: spacing.lg },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
   },
-  planLabel: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
-  button: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  dangerZone: { marginTop: 32, borderTopWidth: 1, borderTopColor: '#EDE3D0', paddingTop: 20 },
-  dangerTitle: { fontSize: 16, fontWeight: '700', color: '#B3452C', marginBottom: 6 },
-  dangerHint: { color: '#8A7B68', marginBottom: 12 },
-  dangerButton: { borderWidth: 1, borderColor: '#B3452C', borderRadius: 8, padding: 14 },
-  dangerButtonText: { color: '#B3452C', textAlign: 'center', fontWeight: '600' },
+  dangerZone: { marginTop: spacing.xxl, borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: spacing.xl },
+  dangerTitle: { fontSize: 16, fontWeight: '700', color: colors.danger, marginBottom: spacing.xs },
+  dangerHint: { color: colors.textSecondary, marginBottom: spacing.md },
 });

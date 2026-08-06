@@ -10,8 +10,12 @@ import type { DocumentCategory, DocumentRecord } from '../types/api';
 import { DOCUMENT_CATEGORIES, getCategoryLabel } from '../data/documentCategories';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import Card from '../components/Card';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Documents'>;
 
@@ -116,23 +120,22 @@ export default function DocumentsScreen({ route, navigation }: Props) {
         data={documents}
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListHeaderComponent={
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>Documents</Text>
-            <AddIconButton onPress={() => setModalVisible(true)} />
-          </View>
-        }
+        ListHeaderComponent={<ScreenHeader title="Documents" action={<AddIconButton onPress={() => setModalVisible(true)} />} />}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => onOpen(item)} disabled={openingId === item.id}>
-            <Text style={styles.cardTitle}>{item.fileName}</Text>
-            <Text style={styles.cardSubtitle}>
-              {getCategoryLabel(item.category)} — {(item.sizeBytes / 1024).toFixed(0)} Ko
-            </Text>
-            <Text style={styles.cardSubtitle}>{new Date(item.createdAt).toLocaleDateString('fr-FR')}</Text>
-            <Text style={styles.openLink}>{openingId === item.id ? 'Ouverture...' : 'Ouvrir'}</Text>
-            <TouchableOpacity onPress={() => onDelete(item)}>
-              <Text style={styles.deleteLink}>Supprimer</Text>
-            </TouchableOpacity>
+          <TouchableOpacity onPress={() => onOpen(item)} disabled={openingId === item.id} activeOpacity={0.8}>
+            <Card>
+              <Text style={styles.cardTitle}>{item.fileName}</Text>
+              <Text style={styles.cardSubtitle}>
+                {getCategoryLabel(item.category)} — {(item.sizeBytes / 1024).toFixed(0)} Ko
+              </Text>
+              <Text style={styles.cardSubtitle}>{new Date(item.createdAt).toLocaleDateString('fr-FR')}</Text>
+              <View style={styles.cardActions}>
+                <Text style={styles.openLink}>{openingId === item.id ? 'Ouverture...' : 'Ouvrir'}</Text>
+                <TouchableOpacity onPress={() => onDelete(item)}>
+                  <Text style={styles.deleteLink}>Supprimer</Text>
+                </TouchableOpacity>
+              </View>
+            </Card>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucun document pour l&apos;instant</Text>}
@@ -163,13 +166,12 @@ export default function DocumentsScreen({ route, navigation }: Props) {
           ))}
         </View>
 
-        <TouchableOpacity
-          style={[styles.uploadButton, !pickedFile && styles.uploadButtonDisabled]}
+        <PrimaryButton
+          title={uploading ? 'Envoi...' : 'Uploader'}
           onPress={onUpload}
           disabled={!pickedFile || uploading}
-        >
-          <Text style={styles.uploadButtonText}>{uploading ? 'Envoi...' : 'Uploader'}</Text>
-        </TouchableOpacity>
+          loading={uploading}
+        />
       </AddModal>
     </>
   );
@@ -177,24 +179,26 @@ export default function DocumentsScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '600' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  openLink: { color: '#B8863B', fontWeight: '600', marginTop: 8 },
-  deleteLink: { color: '#B3452C', fontWeight: '600', marginTop: 8 },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  pickButton: { borderWidth: 1, borderColor: '#E3D8C4', borderStyle: 'dashed', borderRadius: 8, padding: 16, marginBottom: 16 },
-  pickButtonText: { textAlign: 'center', color: '#3A3226' },
-  label: { color: '#8A7B68', marginBottom: 8 },
-  categoryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
-  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  chipText: { color: '#3A3226' },
+  content: { padding: spacing.lg },
+  cardTitle: { ...typography.sectionTitle, fontSize: 16 },
+  cardSubtitle: { ...typography.caption, marginTop: spacing.xs },
+  cardActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
+  openLink: { color: colors.accent, fontWeight: '600' },
+  deleteLink: { color: colors.danger, fontWeight: '600' },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  pickButton: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    borderRadius: radius.sm,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  pickButtonText: { textAlign: 'center', color: colors.textPrimary },
+  label: { color: colors.textSecondary, marginBottom: spacing.sm },
+  categoryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { color: colors.textPrimary },
   chipTextActive: { color: 'white', fontWeight: '600' },
-  uploadButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  uploadButtonDisabled: { backgroundColor: '#E3C68A' },
-  uploadButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });

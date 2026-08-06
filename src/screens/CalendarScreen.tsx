@@ -8,7 +8,10 @@ import type { Animal, CalendarEntry, HealthEntryType } from '../types/api';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
+import Card from '../components/Card';
 import DatePickerInput from '../components/DatePickerInput';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenHeader from '../components/ScreenHeader';
 import TimePickerInput from '../components/TimePickerInput';
 import RecurrencePicker from '../components/RecurrencePicker';
 import { getVaccinesForSpecies } from '../data/vaccines';
@@ -17,6 +20,7 @@ import { scheduleAppointmentFollowUp } from '../notifications/localReminders';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
 import { formatTime } from '../utils/formatting';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Calendar'>;
 
@@ -99,13 +103,10 @@ export default function CalendarScreen({ route }: Props) {
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>Calendrier — {householdName}</Text>
-            <AddIconButton onPress={openModal} />
-          </View>
+          <ScreenHeader title={`Calendrier — ${householdName}`} action={<AddIconButton onPress={openModal} />} />
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Card>
             <Text style={styles.cardTitle}>
               {item.animalName} — {item.customTypeLabel ?? item.type}
             </Text>
@@ -114,7 +115,7 @@ export default function CalendarScreen({ route }: Props) {
                 ? `Rappel le ${item.nextReminderDate}`
                 : `Prevu le ${item.scheduledDate}${item.scheduledTime ? ` a ${formatTime(item.scheduledTime)}` : ''}`}
             </Text>
-          </View>
+          </Card>
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucune echeance a venir</Text>}
       />
@@ -159,9 +160,7 @@ export default function CalendarScreen({ route }: Props) {
             <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
             <TimePickerInput value={scheduledTime} onChange={setScheduledTime} placeholder="Heure (optionnel)" />
             <RecurrencePicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
-            <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-              <Text style={styles.addButtonText}>Ajouter</Text>
-            </TouchableOpacity>
+            <PrimaryButton title="Ajouter" onPress={onCreate} />
           </>
         )}
       </AddModal>
@@ -171,20 +170,14 @@ export default function CalendarScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', flexShrink: 1, marginRight: 12 },
-  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '600' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  label: { color: '#8A7B68', marginBottom: 8, marginTop: 4 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  chipText: { color: '#3A3226' },
+  content: { padding: spacing.lg },
+  cardTitle: { ...typography.sectionTitle, fontSize: 16 },
+  cardSubtitle: { ...typography.caption, marginTop: spacing.xs },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  label: { color: colors.textSecondary, marginBottom: spacing.sm, marginTop: spacing.xs },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { color: colors.textPrimary },
   chipTextActive: { color: 'white', fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
-  addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });

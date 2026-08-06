@@ -8,8 +8,11 @@ import type { Household } from '../types/api';
 import LogoutButton from '../components/LogoutButton';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
+import { cardShadow, colors, radius, spacing } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Households'>;
 
@@ -96,15 +99,11 @@ export default function HouseholdsScreen({ navigation }: Props) {
         columnWrapperStyle={styles.row}
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListHeaderComponent={
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>Mes foyers</Text>
-            <AddIconButton onPress={() => setModalVisible(true)} />
-          </View>
-        }
+        ListHeaderComponent={<ScreenHeader title="Mes foyers" action={<AddIconButton onPress={() => setModalVisible(true)} />} />}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.tile}
+            activeOpacity={0.85}
             onPress={() => navigation.navigate('Animals', { householdId: item.id, householdName: item.name })}
           >
             <Text style={styles.tileIcon}>🏠</Text>
@@ -160,9 +159,12 @@ export default function HouseholdsScreen({ navigation }: Props) {
               onChangeText={setNewHouseholdName}
               autoFocus
             />
-            <TouchableOpacity style={styles.addButton} onPress={onCreate} disabled={submitting}>
-              <Text style={styles.addButtonText}>{submitting ? 'Creation...' : 'Creer'}</Text>
-            </TouchableOpacity>
+            <PrimaryButton
+              title={submitting ? 'Creation...' : 'Creer'}
+              onPress={onCreate}
+              disabled={submitting}
+              loading={submitting}
+            />
           </>
         ) : (
           <>
@@ -174,9 +176,12 @@ export default function HouseholdsScreen({ navigation }: Props) {
               onChangeText={setInviteCode}
               autoFocus
             />
-            <TouchableOpacity style={styles.addButton} onPress={onJoin} disabled={submitting}>
-              <Text style={styles.addButtonText}>{submitting ? 'Connexion...' : 'Rejoindre'}</Text>
-            </TouchableOpacity>
+            <PrimaryButton
+              title={submitting ? 'Connexion...' : 'Rejoindre'}
+              onPress={onJoin}
+              disabled={submitting}
+              loading={submitting}
+            />
           </>
         )}
       </AddModal>
@@ -186,32 +191,37 @@ export default function HouseholdsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  accountLink: { color: '#B8863B', fontWeight: '600' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  row: { gap: 12 },
+  content: { padding: spacing.lg },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  accountLink: { color: colors.accent, fontWeight: '600' },
+  row: { gap: spacing.md },
   tile: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#E3D8C4',
+    borderColor: colors.border,
+    ...cardShadow,
   },
-  tileIcon: { fontSize: 22, marginBottom: 6 },
-  tileTitle: { fontSize: 16, fontWeight: '700', color: '#3A3226' },
-  tileSubtitle: { color: '#8A7B68', marginTop: 2, fontSize: 12 },
-  membersLink: { color: '#B8863B', fontWeight: '600', marginTop: 10, fontSize: 12 },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  modeRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  modeChip: { flex: 1, borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, paddingVertical: 10 },
-  modeChipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  modeChipText: { color: '#3A3226', textAlign: 'center', fontWeight: '600' },
+  tileIcon: { fontSize: 22, marginBottom: spacing.xs },
+  tileTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  tileSubtitle: { color: colors.textSecondary, marginTop: 2, fontSize: 12 },
+  membersLink: { color: colors.accent, fontWeight: '600', marginTop: spacing.sm, fontSize: 12 },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  modeRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
+  modeChip: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingVertical: 10 },
+  modeChipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  modeChipText: { color: colors.textPrimary, textAlign: 'center', fontWeight: '600' },
   modeChipTextActive: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
-  addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
 });

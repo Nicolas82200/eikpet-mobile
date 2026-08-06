@@ -5,9 +5,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { EmergencySheet, EmergencyShareLink } from '../types/api';
+import Card from '../components/Card';
 import LoadingScreen from '../components/LoadingScreen';
+import PrimaryButton from '../components/PrimaryButton';
 import { getProviderTypeLabel } from '../data/providerTypes';
 import { showError, showLoadError } from '../utils/errorHandling';
+import { colors, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'EmergencySheet'>;
 
@@ -126,14 +129,14 @@ export default function EmergencySheetScreen({ route }: Props) {
         {animal.age ? ` — ${animal.age.years} an(s) ${animal.age.months} mois` : ''}
       </Text>
 
-      <View style={styles.section}>
+      <Card>
         <Text style={styles.sectionTitle}>Identite</Text>
         {animal.currentWeightKg != null && <Text style={styles.line}>Poids : {animal.currentWeightKg} kg</Text>}
         {animal.microchipNumber && <Text style={styles.line}>Puce / tatouage : {animal.microchipNumber}</Text>}
         {animal.color && <Text style={styles.line}>Robe / couleur : {animal.color}</Text>}
-      </View>
+      </Card>
 
-      <View style={styles.section}>
+      <Card>
         <Text style={styles.sectionTitle}>Fiche medicale</Text>
         {!medicalProfile && <Text style={styles.emptyHint}>Aucune information renseignee.</Text>}
         {medicalProfile?.chronicConditions && (
@@ -159,9 +162,9 @@ export default function EmergencySheetScreen({ route }: Props) {
             </Text>
           </TouchableOpacity>
         )}
-      </View>
+      </Card>
 
-      <View style={styles.section}>
+      <Card>
         <Text style={styles.sectionTitle}>Traitements en cours</Text>
         {treatments.length === 0 && <Text style={styles.emptyHint}>Aucun traitement en cours.</Text>}
         {treatments.map((t) => (
@@ -171,9 +174,9 @@ export default function EmergencySheetScreen({ route }: Props) {
             {t.frequency ? ` (${t.frequency})` : ''}
           </Text>
         ))}
-      </View>
+      </Card>
 
-      <View style={styles.section}>
+      <Card>
         <Text style={styles.sectionTitle}>Intervenants</Text>
         {providers.length === 0 && <Text style={styles.emptyHint}>Aucun intervenant associe.</Text>}
         {providers.map((p) => (
@@ -184,9 +187,9 @@ export default function EmergencySheetScreen({ route }: Props) {
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </Card>
 
-      <View style={styles.section}>
+      <Card>
         <Text style={styles.sectionTitle}>Partage temporaire (pet-sitter)</Text>
         <Text style={styles.emptyHint}>
           Genere un lien consultable sans compte, valable 72h, ouvrable dans n&apos;importe quel navigateur.
@@ -199,37 +202,35 @@ export default function EmergencySheetScreen({ route }: Props) {
             </TouchableOpacity>
           </View>
         ))}
-        <TouchableOpacity style={styles.shareButton} onPress={onCreateShareLink} disabled={creatingLink}>
-          <Text style={styles.shareButtonText}>
-            {creatingLink ? 'Generation...' : 'Generer un lien temporaire'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        <PrimaryButton
+          title={creatingLink ? 'Generation...' : 'Generer un lien temporaire'}
+          onPress={onCreateShareLink}
+          disabled={creatingLink}
+          loading={creatingLink}
+          style={styles.shareButton}
+        />
+      </Card>
 
-      <TouchableOpacity style={styles.shareButton} onPress={onShare}>
-        <Text style={styles.shareButtonText}>Partager la fiche d&apos;urgence</Text>
-      </TouchableOpacity>
+      <PrimaryButton title="Partager la fiche d'urgence" onPress={onShare} style={styles.shareButton} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
-  subtitle: { color: '#8A7B68', textAlign: 'center', marginBottom: 16 },
-  section: { backgroundColor: '#EDE3D0', borderRadius: 12, padding: 16, marginBottom: 12 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#3A3226', marginBottom: 8 },
-  line: { color: '#3A3226', marginBottom: 4 },
-  emptyHint: { color: '#8A7B68', marginBottom: 10 },
+  container: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  title: { ...typography.screenTitle, textAlign: 'center' },
+  subtitle: { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.lg },
+  sectionTitle: { ...typography.sectionTitle, fontSize: 15, marginBottom: spacing.sm },
+  line: { color: colors.textPrimary, marginBottom: spacing.xs },
+  emptyHint: { color: colors.textSecondary, marginBottom: 10 },
   shareLinkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 6,
     borderTopWidth: 1,
-    borderTopColor: '#E3D8C4',
+    borderTopColor: colors.border,
   },
-  revokeLink: { color: '#B3452C', fontWeight: '600' },
-  shareButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 8 },
-  shareButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
+  revokeLink: { color: colors.danger, fontWeight: '600' },
+  shareButton: { marginTop: spacing.sm },
 });

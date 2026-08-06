@@ -9,8 +9,12 @@ import { BOARDING_PERIODICITIES, getPeriodicityLabel } from '../data/boardingPer
 import DatePickerInput from '../components/DatePickerInput';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import Card from '../components/Card';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Boardings'>;
 
@@ -121,6 +125,43 @@ export default function BoardingsScreen({ route, navigation }: Props) {
     ]);
   };
 
+  const renderForm = (onSubmit: () => void, submitLabel: string) => (
+    <>
+      <TextInput style={styles.input} placeholder="Nom de la pension" value={name} onChangeText={setName} />
+      <TextInput
+        style={styles.input}
+        placeholder="Prix (€)"
+        keyboardType="decimal-pad"
+        value={price}
+        onChangeText={setPrice}
+      />
+
+      <Text style={styles.label}>Periodicite</Text>
+      <View style={styles.chipRow}>
+        {BOARDING_PERIODICITIES.map((p) => (
+          <TouchableOpacity
+            key={p.value}
+            style={[styles.chip, periodicity === p.value && styles.chipActive]}
+            onPress={() => setPeriodicity(p.value)}
+          >
+            <Text style={periodicity === p.value ? styles.chipTextActive : styles.chipText}>{p.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Echeance</Text>
+      <DatePickerInput value={dueDate} onChange={setDueDate} />
+
+      <PrimaryButton
+        title={submitting ? 'Enregistrement...' : submitLabel}
+        onPress={onSubmit}
+        disabled={submitting || !name.trim() || !dueDate}
+        loading={submitting}
+        style={styles.submitButton}
+      />
+    </>
+  );
+
   return (
     <>
       <FlatList
@@ -129,14 +170,9 @@ export default function BoardingsScreen({ route, navigation }: Props) {
         data={entries}
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListHeaderComponent={
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>Pension</Text>
-            <AddIconButton onPress={() => setModalVisible(true)} />
-          </View>
-        }
+        ListHeaderComponent={<ScreenHeader title="Pension" action={<AddIconButton onPress={() => setModalVisible(true)} />} />}
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Card>
             <Text style={styles.cardTitle}>{item.name}</Text>
             <Text style={styles.cardSubtitle}>
               {new Date(item.dueDate).toLocaleDateString('fr-FR')} — {getPeriodicityLabel(item.periodicity)}
@@ -155,7 +191,7 @@ export default function BoardingsScreen({ route, navigation }: Props) {
                 <Text style={styles.deleteLink}>Supprimer</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </Card>
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucune echeance de pension pour l&apos;instant</Text>}
       />
@@ -168,38 +204,7 @@ export default function BoardingsScreen({ route, navigation }: Props) {
           resetForm();
         }}
       >
-        <TextInput style={styles.input} placeholder="Nom de la pension" value={name} onChangeText={setName} />
-        <TextInput
-          style={styles.input}
-          placeholder="Prix (€)"
-          keyboardType="decimal-pad"
-          value={price}
-          onChangeText={setPrice}
-        />
-
-        <Text style={styles.label}>Periodicite</Text>
-        <View style={styles.chipRow}>
-          {BOARDING_PERIODICITIES.map((p) => (
-            <TouchableOpacity
-              key={p.value}
-              style={[styles.chip, periodicity === p.value && styles.chipActive]}
-              onPress={() => setPeriodicity(p.value)}
-            >
-              <Text style={periodicity === p.value ? styles.chipTextActive : styles.chipText}>{p.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Echeance</Text>
-        <DatePickerInput value={dueDate} onChange={setDueDate} />
-
-        <TouchableOpacity
-          style={styles.submitButton}
-          onPress={onCreate}
-          disabled={submitting || !name.trim() || !dueDate}
-        >
-          <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Ajouter'}</Text>
-        </TouchableOpacity>
+        {renderForm(onCreate, 'Ajouter')}
       </AddModal>
 
       <AddModal
@@ -210,38 +215,7 @@ export default function BoardingsScreen({ route, navigation }: Props) {
           resetForm();
         }}
       >
-        <TextInput style={styles.input} placeholder="Nom de la pension" value={name} onChangeText={setName} />
-        <TextInput
-          style={styles.input}
-          placeholder="Prix (€)"
-          keyboardType="decimal-pad"
-          value={price}
-          onChangeText={setPrice}
-        />
-
-        <Text style={styles.label}>Periodicite</Text>
-        <View style={styles.chipRow}>
-          {BOARDING_PERIODICITIES.map((p) => (
-            <TouchableOpacity
-              key={p.value}
-              style={[styles.chip, periodicity === p.value && styles.chipActive]}
-              onPress={() => setPeriodicity(p.value)}
-            >
-              <Text style={periodicity === p.value ? styles.chipTextActive : styles.chipText}>{p.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Echeance</Text>
-        <DatePickerInput value={dueDate} onChange={setDueDate} />
-
-        <TouchableOpacity
-          style={styles.submitButton}
-          onPress={onSaveEdit}
-          disabled={submitting || !name.trim() || !dueDate}
-        >
-          <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</Text>
-        </TouchableOpacity>
+        {renderForm(onSaveEdit, 'Enregistrer')}
       </AddModal>
     </>
   );
@@ -249,25 +223,29 @@ export default function BoardingsScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '600' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  cardActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  statusPaid: { color: '#2E7D32', fontWeight: '600' },
-  statusUnpaid: { color: '#B3452C', fontWeight: '600' },
-  editLink: { color: '#B8863B', fontWeight: '600' },
-  deleteLink: { color: '#B3452C', fontWeight: '600' },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  label: { color: '#8A7B68', marginBottom: 8, marginTop: 4 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  chipText: { color: '#3A3226' },
+  content: { padding: spacing.lg },
+  cardTitle: { ...typography.sectionTitle, fontSize: 16 },
+  cardSubtitle: { ...typography.caption, marginTop: spacing.xs },
+  cardActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm },
+  statusPaid: { color: colors.success, fontWeight: '600' },
+  statusUnpaid: { color: colors.danger, fontWeight: '600' },
+  editLink: { color: colors.accent, fontWeight: '600' },
+  deleteLink: { color: colors.danger, fontWeight: '600' },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  label: { color: colors.textSecondary, marginBottom: spacing.sm, marginTop: spacing.xs },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { color: colors.textPrimary },
   chipTextActive: { color: 'white', fontWeight: '600' },
-  submitButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 8 },
-  submitButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
+  submitButton: { marginTop: spacing.sm },
 });

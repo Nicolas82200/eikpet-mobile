@@ -9,8 +9,11 @@ import SpeciesPicker from '../components/SpeciesPicker';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AuthenticatedImage from '../components/AuthenticatedImage';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
+import { cardShadow, colors, radius, spacing } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Animals'>;
 
@@ -58,10 +61,7 @@ export default function AnimalsScreen({ route, navigation }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>{householdName}</Text>
-              <AddIconButton onPress={() => setModalVisible(true)} />
-            </View>
+            <ScreenHeader title={householdName} action={<AddIconButton onPress={() => setModalVisible(true)} />} />
             <TouchableOpacity
               style={styles.calendarLink}
               onPress={() => navigation.navigate('Calendar', { householdId, householdName })}
@@ -85,6 +85,7 @@ export default function AnimalsScreen({ route, navigation }: Props) {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.tile}
+            activeOpacity={0.85}
             onPress={() =>
               navigation.navigate('AnimalDetail', { animalId: item.id, animalName: item.name, householdId })
             }
@@ -114,9 +115,7 @@ export default function AnimalsScreen({ route, navigation }: Props) {
         <View style={styles.speciesField}>
           <SpeciesPicker value={species} onChange={setSpecies} />
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-          <Text style={styles.addButtonText}>Ajouter</Text>
-        </TouchableOpacity>
+        <PrimaryButton title="Ajouter" onPress={onCreate} />
       </AddModal>
     </>
   );
@@ -124,37 +123,42 @@ export default function AnimalsScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  calendarLink: { marginBottom: 16 },
-  calendarLinkText: { color: '#B8863B', fontWeight: '600' },
-  row: { gap: 12 },
+  content: { padding: spacing.lg },
+  calendarLink: { marginBottom: spacing.lg },
+  calendarLinkText: { color: colors.accent, fontWeight: '600' },
+  row: { gap: spacing.md },
   tile: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#E3D8C4',
+    borderColor: colors.border,
+    ...cardShadow,
   },
-  tileImage: { width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: '#EDE3D0', marginBottom: 10 },
+  tileImage: { width: '100%', aspectRatio: 1, borderRadius: radius.md, backgroundColor: colors.divider, marginBottom: spacing.sm },
   tileImagePlaceholder: {
     width: '100%',
     aspectRatio: 1,
-    borderRadius: 12,
-    backgroundColor: '#FAF6EF',
+    borderRadius: radius.md,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#E3D8C4',
+    borderColor: colors.border,
     borderStyle: 'dashed',
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
-  tileTitle: { fontSize: 16, fontWeight: '700', color: '#3A3226' },
-  tileSubtitle: { color: '#8A7B68', marginTop: 2, fontSize: 12 },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
-  speciesField: { marginBottom: 16 },
-  addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
+  tileTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  tileSubtitle: { color: colors.textSecondary, marginTop: 2, fontSize: 12 },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  speciesField: { marginBottom: spacing.lg },
 });
