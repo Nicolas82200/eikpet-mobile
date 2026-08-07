@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -11,6 +11,7 @@ import AddModal from '../components/AddModal';
 import Accordion from '../components/Accordion';
 import AutocompleteInput from '../components/AutocompleteInput';
 import Card from '../components/Card';
+import Dropdown from '../components/Dropdown';
 import NullableField from '../components/NullableField';
 import DatePickerInput from '../components/DatePickerInput';
 import PrimaryButton from '../components/PrimaryButton';
@@ -30,11 +31,19 @@ import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MedicalProfile'>;
 
-const REMINDER_PRESETS = [
+const FREQUENCY_PRESETS = [
   { key: 'matin', label: 'Matin', time: '08:00' },
   { key: 'midi', label: 'Midi', time: '12:00' },
   { key: 'soir', label: 'Soir', time: '20:00' },
 ] as const;
+
+type DurationUnit = 'jours' | 'mois' | 'vie';
+
+const DURATION_UNIT_OPTIONS: { value: DurationUnit; label: string }[] = [
+  { value: 'jours', label: 'Jours' },
+  { value: 'mois', label: 'Mois' },
+  { value: 'vie', label: 'A vie' },
+];
 
 function todayIsoDate(): string {
   const now = new Date();
@@ -56,9 +65,11 @@ export default function MedicalProfileScreen({ route }: Props) {
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [treatmentName, setTreatmentName] = useState('');
   const [treatmentDosage, setTreatmentDosage] = useState('');
-  const [reminderPresets, setReminderPresets] = useState<Set<string>>(new Set());
-  const [reminderStartDate, setReminderStartDate] = useState(todayIsoDate());
-  const [reminderDurationDays, setReminderDurationDays] = useState('');
+  const [frequencyPresets, setFrequencyPresets] = useState<Set<string>>(new Set());
+  const [treatmentStartDate, setTreatmentStartDate] = useState(todayIsoDate());
+  const [durationValue, setDurationValue] = useState('');
+  const [durationUnit, setDurationUnit] = useState<DurationUnit | null>(null);
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [treatmentModalVisible, setTreatmentModalVisible] = useState(false);
 
   const [surgicalHistory, setSurgicalHistory] = useState<SurgicalHistoryEntry[]>([]);
@@ -131,34 +142,57 @@ export default function MedicalProfileScreen({ route }: Props) {
     setProfile((prev) => ({ ...prev, [key]: value }));
   };
 
+  const resetTreatmentForm = () => {
+    setTreatmentName('');
+    setTreatmentDosage('');
+    setFrequencyPresets(new Set());
+    setTreatmentStartDate(todayIsoDate());
+    setDurationValue('');
+    setDurationUnit(null);
+    setRemindersEnabled(false);
+  };
+
   const onAddTreatment = async () => {
     if (!treatmentName.trim()) return;
-    const times = REMINDER_PRESETS.filter((p) => reminderPresets.has(p.key)).map((p) => p.time);
-    const durationDays = parseInt(reminderDurationDays, 10) || 0;
+    const selectedPresets = FREQUENCY_PRESETS.filter((p) => frequencyPresets.has(p.key));
+    const times = selectedPresets.map((p) => p.time);
+    const frequencyLabel = selectedPresets.map((p) => p.label).join(', ') || undefined;
+
+    let durationDays: number | null = null;
+    if (durationUnit === 'jours') durationDays = parseInt(durationValue, 10) || null;
+    if (durationUnit === 'mois') durationDays = (parseInt(durationValue, 10) || 0) * 30 || null;
+
+    const endDate =
+      durationUnit && durationUnit !== 'vie' && durationDays
+        ? (() => {
+            const d = new Date(`${treatmentStartDate}T00:00:00Z`);
+            d.setUTCDate(d.getUTCDate() + durationDays!);
+            return d.toISOString().slice(0, 10);
+          })()
+        : undefined;
+
     try {
       const treatment = await api.createTreatment(animalId, {
         name: treatmentName.trim(),
         dosage: treatmentDosage || null,
-        startDate: times.length > 0 ? reminderStartDate : undefined,
-        reminderTimes: times.length > 0 ? times.join(',') : null,
+        frequency: frequencyLabel,
+        startDate: treatmentStartDate,
+        endDate,
+        reminderTimes: remindersEnabled && times.length > 0 ? times.join(',') : null,
       });
-      if (times.length > 0 && durationDays > 0) {
+      if (remindersEnabled && times.length > 0 && durationDays) {
         await scheduleTreatmentReminders({
           animalId,
           animalName,
           treatmentId: treatment.id,
           treatmentName: treatment.name,
           dosage: treatment.dosage,
-          startDate: reminderStartDate,
+          startDate: treatmentStartDate,
           durationDays,
           times,
         });
       }
-      setTreatmentName('');
-      setTreatmentDosage('');
-      setReminderPresets(new Set());
-      setReminderStartDate(todayIsoDate());
-      setReminderDurationDays('');
+      resetTreatmentForm();
       setTreatmentModalVisible(false);
       api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
     } catch (error) {
@@ -185,8 +219,8 @@ export default function MedicalProfileScreen({ route }: Props) {
     ]);
   };
 
-  const toggleReminderPreset = (key: string) => {
-    setReminderPresets((prev) => {
+  const toggleFrequencyPreset = (key: string) => {
+    setFrequencyPresets((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
         next.delete(key);
@@ -426,6 +460,12 @@ export default function MedicalProfileScreen({ route }: Props) {
               <Card key={t.id} style={styles.listCard}>
                 <Text style={styles.listCardTitle}>{t.name}</Text>
                 {t.dosage && <Text style={styles.listCardSubtitle}>{t.dosage}</Text>}
+                {t.frequency && <Text style={styles.listCardSubtitle}>{t.frequency}</Text>}
+                {t.endDate ? (
+                  <Text style={styles.listCardSubtitle}>Jusqu&apos;au {t.endDate}</Text>
+                ) : (
+                  <Text style={styles.listCardSubtitle}>Traitement a vie</Text>
+                )}
                 {t.reminderTimes && <Text style={styles.listCardSubtitle}>Rappels : {t.reminderTimes}</Text>}
                 <TouchableOpacity onPress={() => onDeleteTreatment(t)}>
                   <Text style={styles.deleteLink}>Supprimer</Text>
@@ -465,7 +505,10 @@ export default function MedicalProfileScreen({ route }: Props) {
       <AddModal
         visible={treatmentModalVisible}
         title="Ajouter un traitement"
-        onClose={() => setTreatmentModalVisible(false)}
+        onClose={() => {
+          setTreatmentModalVisible(false);
+          resetTreatmentForm();
+        }}
       >
         <AutocompleteInput
           value={treatmentName}
@@ -476,41 +519,53 @@ export default function MedicalProfileScreen({ route }: Props) {
         />
         <TextInput
           style={styles.input}
-          placeholder="Dosage / frequence"
+          placeholder="Dosage (ex : 1 comprime)"
           value={treatmentDosage}
           onChangeText={setTreatmentDosage}
         />
 
-        <Text style={styles.label}>Rappels de prise (optionnel)</Text>
+        <Text style={styles.label}>Frequence de prise</Text>
         <View style={styles.chipRow}>
-          {REMINDER_PRESETS.map((preset) => (
+          {FREQUENCY_PRESETS.map((preset) => (
             <TouchableOpacity
               key={preset.key}
-              style={[styles.chip, reminderPresets.has(preset.key) && styles.chipActive]}
-              onPress={() => toggleReminderPreset(preset.key)}
+              style={[styles.chip, frequencyPresets.has(preset.key) && styles.chipActive]}
+              onPress={() => toggleFrequencyPreset(preset.key)}
             >
-              <Text style={reminderPresets.has(preset.key) ? styles.chipTextActive : styles.chipText}>
+              <Text style={frequencyPresets.has(preset.key) ? styles.chipTextActive : styles.chipText}>
                 {preset.label} ({preset.time})
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-        {reminderPresets.size > 0 && (
-          <>
-            <Text style={styles.label}>Debut des rappels</Text>
-            <DatePickerInput value={reminderStartDate} onChange={setReminderStartDate} />
-            <Text style={styles.label}>Pendant combien de jours</Text>
+
+        <Text style={styles.label}>Depuis quand</Text>
+        <DatePickerInput value={treatmentStartDate} onChange={setTreatmentStartDate} />
+
+        <Text style={styles.label}>Duree du traitement</Text>
+        <View style={styles.durationRow}>
+          {durationUnit !== 'vie' && (
             <TextInput
-              style={styles.input}
-              placeholder="Ex: 7"
+              style={[styles.input, styles.durationValueInput]}
+              placeholder="Ex : 7"
               keyboardType="number-pad"
-              value={reminderDurationDays}
-              onChangeText={setReminderDurationDays}
+              value={durationValue}
+              onChangeText={setDurationValue}
             />
-          </>
+          )}
+          <View style={styles.durationUnitField}>
+            <Dropdown value={durationUnit} onChange={setDurationUnit} options={DURATION_UNIT_OPTIONS} placeholder="Unite" />
+          </View>
+        </View>
+
+        {durationUnit && durationUnit !== 'vie' && (
+          <View style={styles.switchRow}>
+            <Text style={styles.label}>Souhaites-tu des rappels de prise ?</Text>
+            <Switch value={remindersEnabled} onValueChange={setRemindersEnabled} disabled={frequencyPresets.size === 0} />
+          </View>
         )}
 
-        <PrimaryButton title="Ajouter" onPress={onAddTreatment} />
+        <PrimaryButton title="Ajouter" onPress={onAddTreatment} disabled={!treatmentName.trim()} />
       </AddModal>
 
       <AddModal
@@ -571,6 +626,10 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   noteAddButton: { paddingHorizontal: spacing.lg },
+  durationRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
+  durationValueInput: { flex: 1 },
+  durationUnitField: { flex: 2 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm, marginBottom: spacing.md },
   listCard: { backgroundColor: colors.surface, marginBottom: spacing.sm, padding: spacing.md },
   listCardTitle: { fontWeight: '600' },
   listCardSubtitle: { color: colors.textSecondary, marginTop: 2 },
