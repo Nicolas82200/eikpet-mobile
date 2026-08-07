@@ -204,3 +204,14 @@ export interface EmergencySheet {
   treatments: Treatment[];
   providers: Provider[];
 }
+
+export interface EmergencyShareLink {
+  id: number;
+  animalId: number;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface EmergencyShareLinkWithToken extends EmergencyShareLink {
+  token: string;
+}

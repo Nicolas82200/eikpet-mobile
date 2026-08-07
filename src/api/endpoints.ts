@@ -12,6 +12,8 @@ import type {
   DocumentCategory,
   DocumentRecord,
   EmergencySheet,
+  EmergencyShareLink,
+  EmergencyShareLinkWithToken,
   Household,
   HouseholdBudget,
   HouseholdMember,
@@ -164,6 +166,29 @@ export async function uploadAnimalPhoto(
 
 export function getEmergencySheet(animalId: number): Promise<EmergencySheet> {
   return apiRequest(`/animals/${animalId}/emergency-sheet`);
+}
+
+/** Genere un lien de partage temporaire (pet-sitter), lecture seule, sans compte. */
+export function createEmergencyShareLink(
+  animalId: number,
+  expiresInHours?: number,
+): Promise<EmergencyShareLinkWithToken> {
+  return apiRequest(`/animals/${animalId}/emergency-sheet/share-links`, {
+    method: 'POST',
+    body: { expiresInHours },
+  });
+}
+
+export function listEmergencyShareLinks(animalId: number): Promise<EmergencyShareLink[]> {
+  return apiRequest(`/animals/${animalId}/emergency-sheet/share-links`);
+}
+
+export function revokeEmergencyShareLink(animalId: number, linkId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/emergency-sheet/share-links/${linkId}`, { method: 'DELETE' });
+}
+
+export function buildEmergencySharedUrl(token: string): string {
+  return `${API_BASE_URL}/emergency-sheet/shared/${token}`;
 }
 
 // --- Fiche medicale ---
