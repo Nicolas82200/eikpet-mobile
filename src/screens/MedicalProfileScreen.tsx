@@ -66,6 +66,9 @@ export default function MedicalProfileScreen({ route }: Props) {
   const [performedOn, setPerformedOn] = useState('');
   const [surgicalModalVisible, setSurgicalModalVisible] = useState(false);
 
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const toggleSection = (key: string) => setOpenSection((current) => (current === key ? null : key));
+
   const load = useCallback(() => {
     api
       .getMedicalProfile(animalId)
@@ -239,7 +242,13 @@ export default function MedicalProfileScreen({ route }: Props) {
             {saveStatus === 'error' && <Text style={styles.saveStatusTextError}>Erreur</Text>}
           </View>
 
-          <Accordion title="Antecedents medicaux" subtitle="Maladies, allergies, regime, groupe sanguin" warning={antecedentsIncomplete}>
+          <Accordion
+            title="Antecedents medicaux"
+            subtitle="Maladies, allergies, regime, groupe sanguin"
+            warning={antecedentsIncomplete}
+            open={openSection === 'antecedents'}
+            onToggle={() => toggleSection('antecedents')}
+          >
             <Text style={styles.label}>Maladies chroniques</Text>
             <NullableField
               value={profile.chronicConditions ?? ''}
@@ -281,7 +290,12 @@ export default function MedicalProfileScreen({ route }: Props) {
             />
           </Accordion>
 
-          <Accordion title="Assurance" subtitle={insured ? String(profile.insuranceProvider) : 'Non renseigne'}>
+          <Accordion
+            title="Assurance"
+            subtitle={insured ? String(profile.insuranceProvider) : 'Non renseigne'}
+            open={openSection === 'assurance'}
+            onToggle={() => toggleSection('assurance')}
+          >
             <Text style={styles.label}>Assureur</Text>
             <NullableField
               value={profile.insuranceProvider ?? ''}
@@ -319,7 +333,12 @@ export default function MedicalProfileScreen({ route }: Props) {
             )}
           </Accordion>
 
-          <Accordion title="Veterinaire referent" subtitle={hasVet ? String(profile.referringVetName) : 'Non renseigne'}>
+          <Accordion
+            title="Veterinaire referent"
+            subtitle={hasVet ? String(profile.referringVetName) : 'Non renseigne'}
+            open={openSection === 'veterinaire'}
+            onToggle={() => toggleSection('veterinaire')}
+          >
             <Text style={styles.label}>Nom</Text>
             <NullableField
               value={profile.referringVetName ?? ''}
@@ -343,6 +362,8 @@ export default function MedicalProfileScreen({ route }: Props) {
           <Accordion
             title="Traitements en cours"
             subtitle={treatments.length > 0 ? `${treatments.length} en cours` : 'Aucun'}
+            open={openSection === 'traitements'}
+            onToggle={() => toggleSection('traitements')}
           >
             <View style={styles.accordionAddRow}>
               <AddIconButton onPress={() => setTreatmentModalVisible(true)} />
@@ -363,6 +384,8 @@ export default function MedicalProfileScreen({ route }: Props) {
           <Accordion
             title="Antecedents chirurgicaux"
             subtitle={surgicalHistory.length > 0 ? `${surgicalHistory.length} enregistre(s)` : 'Aucun'}
+            open={openSection === 'chirurgie'}
+            onToggle={() => toggleSection('chirurgie')}
           >
             <View style={styles.accordionAddRow}>
               <AddIconButton onPress={() => setSurgicalModalVisible(true)} />
