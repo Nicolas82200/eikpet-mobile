@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: 'bold' },
   mapLink: { marginBottom: 16 },
   mapLinkText: { color: '#B8863B', fontWeight: '600' },
-  card: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
+  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardType: { color: '#B8863B', fontWeight: '700', fontSize: 12, textTransform: 'uppercase' },
   cardTitle: { fontSize: 16, fontWeight: '600', marginTop: 4 },
   cardSubtitle: { color: '#8A7B68', marginTop: 4 },

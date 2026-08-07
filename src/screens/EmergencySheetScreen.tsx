@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 32 },
   title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
   subtitle: { color: '#8A7B68', textAlign: 'center', marginBottom: 16 },
-  section: { backgroundColor: '#FAF6EF', borderRadius: 12, padding: 16, marginBottom: 12 },
+  section: { backgroundColor: '#EDE3D0', borderRadius: 12, padding: 16, marginBottom: 12 },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: '#3A3226', marginBottom: 8 },
   line: { color: '#3A3226', marginBottom: 4 },
   emptyHint: { color: '#8A7B68', marginBottom: 10 },

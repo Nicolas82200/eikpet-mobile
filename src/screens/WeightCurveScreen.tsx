@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   title: { fontSize: 22, fontWeight: 'bold' },
   chartCard: {
-    backgroundColor: '#FAF6EF',
+    backgroundColor: '#EDE3D0',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 8,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   barTrack: { height: CHART_HEIGHT, justifyContent: 'flex-end' },
   bar: { width: 14, backgroundColor: '#B8863B', borderRadius: 7 },
   barLabel: { fontSize: 10, color: '#8A7B68', marginTop: 6, textAlign: 'center' },
-  card: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
+  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '600' },
   cardSubtitle: { color: '#8A7B68', marginTop: 4 },
   cardNotes: { color: '#3A3226', marginTop: 6 },
