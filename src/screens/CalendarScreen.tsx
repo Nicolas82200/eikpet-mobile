@@ -121,7 +121,7 @@ export default function CalendarScreen({ route }: Props) {
 
       <AddModal visible={modalVisible} title="Ajouter une echeance" onClose={() => setModalVisible(false)}>
         {animals.length === 0 ? (
-          <Text style={styles.empty}>Ajoute d'abord un animal pour lui creer une echeance.</Text>
+          <Text style={styles.empty}>Ajoute d&apos;abord un animal pour lui creer une echeance.</Text>
         ) : (
           <>
             <Text style={styles.label}>Animal</Text>

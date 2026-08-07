@@ -128,7 +128,7 @@ export default function HouseholdsScreen({ navigation }: Props) {
             </TouchableOpacity>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Aucun foyer pour l'instant</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Aucun foyer pour l&apos;instant</Text>}
       />
 
       <AddModal

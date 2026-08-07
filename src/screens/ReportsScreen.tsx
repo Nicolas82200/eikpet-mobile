@@ -45,7 +45,7 @@ export default function ReportsScreen({ route, navigation }: Props) {
           <Text style={styles.cardReport}>{item.report}</Text>
         </View>
       )}
-      ListEmptyComponent={<Text style={styles.empty}>Aucun compte-rendu pour l'instant</Text>}
+      ListEmptyComponent={<Text style={styles.empty}>Aucun compte-rendu pour l&apos;instant</Text>}
     />
   );
 }

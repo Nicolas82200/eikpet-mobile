@@ -146,7 +146,7 @@ export default function ProvidersScreen({ route, navigation }: Props) {
             </View>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Aucun intervenant pour l'instant</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Aucun intervenant pour l&apos;instant</Text>}
       />
 
       <AddModal

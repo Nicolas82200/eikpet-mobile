@@ -58,7 +58,7 @@ export default function BudgetScreen({ route, navigation }: Props) {
           <Text style={styles.cardAmount}>{formatEuros(item.total)}</Text>
         </TouchableOpacity>
       )}
-      ListEmptyComponent={<Text style={styles.empty}>Aucune depense enregistree pour l'instant</Text>}
+      ListEmptyComponent={<Text style={styles.empty}>Aucune depense enregistree pour l&apos;instant</Text>}
     />
   );
 }
