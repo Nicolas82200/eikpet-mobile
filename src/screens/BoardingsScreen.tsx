@@ -15,6 +15,8 @@ import PrimaryButton from '../components/PrimaryButton';
 import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
+import { cancelBoardingReminders, scheduleBoardingReminders } from '../notifications/localReminders';
+import { usePremium } from '../subscriptions/PurchasesContext';
 import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Boardings'>;
@@ -44,7 +46,8 @@ function formatDueDate(entry: BoardingEntry): string {
 }
 
 export default function BoardingsScreen({ route, navigation }: Props) {
-  const { animalId } = route.params;
+  const { animalId, animalName } = route.params;
+  const { isPremium } = usePremium();
   const [entries, setEntries] = useState<BoardingEntry[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [name, setName] = useState('');
@@ -108,11 +111,27 @@ export default function BoardingsScreen({ route, navigation }: Props) {
     return true;
   };
 
+  const syncReminders = (entry: BoardingEntry) => {
+    if (entry.status === 'regle') {
+      cancelBoardingReminders(entry.id).catch(() => undefined);
+      return;
+    }
+    scheduleBoardingReminders({
+      animalId,
+      animalName,
+      boardingId: entry.id,
+      boardingName: entry.name,
+      dueDate: entry.dueDate.slice(0, 10),
+      isPremium,
+    }).catch(() => undefined);
+  };
+
   const onCreate = async () => {
     if (!isFormValid()) return;
     setSubmitting(true);
     try {
-      await api.createBoarding(animalId, buildPayload());
+      const entry = await api.createBoarding(animalId, buildPayload());
+      syncReminders(entry);
       resetForm();
       setModalVisible(false);
       load();
@@ -149,7 +168,8 @@ export default function BoardingsScreen({ route, navigation }: Props) {
     if (!editingEntry || !isFormValid()) return;
     setSubmitting(true);
     try {
-      await api.updateBoarding(animalId, editingEntry.id, buildPayload());
+      const entry = await api.updateBoarding(animalId, editingEntry.id, buildPayload());
+      syncReminders(entry);
       resetForm();
       setEditingEntry(null);
       load();
@@ -162,9 +182,10 @@ export default function BoardingsScreen({ route, navigation }: Props) {
 
   const onTogglePaid = async (entry: BoardingEntry) => {
     try {
-      await api.updateBoarding(animalId, entry.id, {
+      const updated = await api.updateBoarding(animalId, entry.id, {
         status: entry.status === 'regle' ? 'non_regle' : 'regle',
       });
+      syncReminders(updated);
       load();
     } catch (error) {
       showError(error);
@@ -180,6 +201,7 @@ export default function BoardingsScreen({ route, navigation }: Props) {
         onPress: async () => {
           try {
             await api.deleteBoarding(animalId, entry.id);
+            await cancelBoardingReminders(entry.id);
             load();
           } catch (error) {
             showError(error);

@@ -6,6 +6,9 @@ import * as Notifications from 'expo-notifications';
 import { useAuth } from '../auth/AuthContext';
 import { colors } from '../theme/colors';
 import { registerForPushNotifications } from '../notifications/registerForPushNotifications';
+import { cancelBoardingReminders, ensureBoardingNotificationCategory } from '../notifications/localReminders';
+import * as api from '../api/endpoints';
+import { showError } from '../utils/errorHandling';
 import type { AppStackParamList, AuthStackParamList } from './types';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -73,6 +76,22 @@ function handleNotificationResponse(
   const data = response.notification.request.content.data;
   if (data?.kind === 'appointment-followup' && typeof data.animalId === 'number' && typeof data.entryId === 'number') {
     navigation.navigate('AppointmentFollowUp', { animalId: data.animalId, entryId: data.entryId });
+    return;
+  }
+  if (
+    data?.kind === 'boarding-due' &&
+    typeof data.animalId === 'number' &&
+    typeof data.animalName === 'string' &&
+    typeof data.boardingId === 'number'
+  ) {
+    if (response.actionIdentifier === 'mark-paid') {
+      api
+        .updateBoarding(data.animalId, data.boardingId, { status: 'regle' })
+        .then(() => cancelBoardingReminders(data.boardingId as number))
+        .catch(showError);
+      return;
+    }
+    navigation.navigate('Boardings', { animalId: data.animalId, animalName: data.animalName });
   }
 }
 
@@ -81,6 +100,7 @@ function AppNavigator() {
 
   useEffect(() => {
     registerForPushNotifications().catch(() => undefined);
+    ensureBoardingNotificationCategory().catch(() => undefined);
 
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (response) {
