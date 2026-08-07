@@ -17,6 +17,7 @@ export type AppStackParamList = {
   Boardings: { animalId: number; animalName: string };
   Reports: { animalId: number; animalName: string };
   Budget: { householdId: number; householdName: string };
+  AnimalBudget: { animalId: number; animalName: string };
   RidingSessions: { animalId: number; animalName: string };
   WeightCurve: { animalId: number; animalName: string };
   EmergencySheet: { animalId: number; animalName: string };
