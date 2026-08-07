@@ -5,8 +5,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { BoardingEntry, BoardingPeriodicity } from '../types/api';
-import { BOARDING_PERIODICITIES, getPeriodicityLabel } from '../data/boardingPeriodicity';
+import { BOARDING_PERIODICITIES, WEEKDAYS, getPeriodicityLabel, getWeekdayLabel } from '../data/boardingPeriodicity';
 import DatePickerInput from '../components/DatePickerInput';
+import Dropdown from '../components/Dropdown';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import Card from '../components/Card';
@@ -18,6 +19,30 @@ import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Boardings'>;
 
+type StartMode = 'now' | 'custom';
+
+function todayIsoDate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDueDate(entry: BoardingEntry): string {
+  const date = new Date(entry.dueDate).toLocaleDateString('fr-FR');
+  switch (entry.periodicity) {
+    case 'mensuel':
+      return `Le ${entry.dayOfMonth} de chaque mois — prochaine echeance le ${date}`;
+    case 'annuel':
+      return `Chaque annee le ${String(entry.recurrenceDay).padStart(2, '0')}/${String(entry.recurrenceMonth).padStart(2, '0')} — prochaine echeance le ${date}`;
+    case 'hebdomadaire':
+      return `Chaque ${entry.dayOfWeek != null ? getWeekdayLabel(entry.dayOfWeek).toLowerCase() : ''} — prochaine echeance le ${date}`;
+    default:
+      return `Le ${date}`;
+  }
+}
+
 export default function BoardingsScreen({ route, navigation }: Props) {
   const { animalId } = route.params;
   const [entries, setEntries] = useState<BoardingEntry[]>([]);
@@ -26,6 +51,11 @@ export default function BoardingsScreen({ route, navigation }: Props) {
   const [price, setPrice] = useState('');
   const [periodicity, setPeriodicity] = useState<BoardingPeriodicity>('mensuel');
   const [dueDate, setDueDate] = useState('');
+  const [startMode, setStartMode] = useState<StartMode>('now');
+  const [startDate, setStartDate] = useState(todayIsoDate());
+  const [dayOfMonth, setDayOfMonth] = useState('');
+  const [annualDate, setAnnualDate] = useState('');
+  const [dayOfWeek, setDayOfWeek] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [editingEntry, setEditingEntry] = useState<BoardingEntry | null>(null);
 
@@ -41,18 +71,48 @@ export default function BoardingsScreen({ route, navigation }: Props) {
     setPrice('');
     setPeriodicity('mensuel');
     setDueDate('');
+    setStartMode('now');
+    setStartDate(todayIsoDate());
+    setDayOfMonth('');
+    setAnnualDate('');
+    setDayOfWeek(null);
+  };
+
+  const buildPayload = () => {
+    const base = {
+      name: name.trim(),
+      price: price ? parseFloat(price) : undefined,
+      periodicity,
+    };
+    if (periodicity === 'unique') {
+      return { ...base, dueDate };
+    }
+    const resolvedStartDate = startMode === 'now' ? todayIsoDate() : startDate;
+    if (periodicity === 'mensuel') {
+      return { ...base, startDate: resolvedStartDate, dayOfMonth: parseInt(dayOfMonth, 10) };
+    }
+    if (periodicity === 'annuel') {
+      const [, month, day] = annualDate.split('-');
+      return { ...base, startDate: resolvedStartDate, recurrenceMonth: parseInt(month, 10), recurrenceDay: parseInt(day, 10) };
+    }
+    return { ...base, startDate: resolvedStartDate, dayOfWeek: dayOfWeek != null ? parseInt(dayOfWeek, 10) : undefined };
+  };
+
+  const isFormValid = () => {
+    if (!name.trim()) return false;
+    if (periodicity === 'unique') return !!dueDate;
+    if (startMode === 'custom' && !startDate) return false;
+    if (periodicity === 'mensuel') return !!dayOfMonth;
+    if (periodicity === 'annuel') return !!annualDate;
+    if (periodicity === 'hebdomadaire') return dayOfWeek != null;
+    return true;
   };
 
   const onCreate = async () => {
-    if (!name.trim() || !dueDate) return;
+    if (!isFormValid()) return;
     setSubmitting(true);
     try {
-      await api.createBoarding(animalId, {
-        name: name.trim(),
-        price: price ? parseFloat(price) : undefined,
-        periodicity,
-        dueDate,
-      });
+      await api.createBoarding(animalId, buildPayload());
       resetForm();
       setModalVisible(false);
       load();
@@ -74,18 +134,22 @@ export default function BoardingsScreen({ route, navigation }: Props) {
     setPrice(entry.price != null ? String(entry.price) : '');
     setPeriodicity(entry.periodicity);
     setDueDate(entry.dueDate.slice(0, 10));
+    setStartMode('custom');
+    setStartDate(entry.startDate ?? todayIsoDate());
+    setDayOfMonth(entry.dayOfMonth != null ? String(entry.dayOfMonth) : '');
+    setAnnualDate(
+      entry.recurrenceMonth && entry.recurrenceDay
+        ? `2000-${String(entry.recurrenceMonth).padStart(2, '0')}-${String(entry.recurrenceDay).padStart(2, '0')}`
+        : '',
+    );
+    setDayOfWeek(entry.dayOfWeek != null ? String(entry.dayOfWeek) : null);
   };
 
   const onSaveEdit = async () => {
-    if (!editingEntry || !name.trim() || !dueDate) return;
+    if (!editingEntry || !isFormValid()) return;
     setSubmitting(true);
     try {
-      await api.updateBoarding(animalId, editingEntry.id, {
-        name: name.trim(),
-        price: price ? parseFloat(price) : undefined,
-        periodicity,
-        dueDate,
-      });
+      await api.updateBoarding(animalId, editingEntry.id, buildPayload());
       resetForm();
       setEditingEntry(null);
       load();
@@ -149,13 +213,72 @@ export default function BoardingsScreen({ route, navigation }: Props) {
         ))}
       </View>
 
-      <Text style={styles.label}>Echeance</Text>
-      <DatePickerInput value={dueDate} onChange={setDueDate} />
+      {periodicity === 'unique' && (
+        <>
+          <Text style={styles.label}>Echeance</Text>
+          <DatePickerInput value={dueDate} onChange={setDueDate} />
+        </>
+      )}
+
+      {periodicity === 'mensuel' && (
+        <>
+          <Text style={styles.label}>Jour de paiement (1-31)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex : 10"
+            keyboardType="number-pad"
+            maxLength={2}
+            value={dayOfMonth}
+            onChangeText={setDayOfMonth}
+          />
+        </>
+      )}
+
+      {periodicity === 'annuel' && (
+        <>
+          <Text style={styles.label}>Date de paiement chaque annee (ex : 10/02)</Text>
+          <DatePickerInput value={annualDate} onChange={setAnnualDate} />
+        </>
+      )}
+
+      {periodicity === 'hebdomadaire' && (
+        <>
+          <Text style={styles.label}>Jour de la semaine</Text>
+          <Dropdown
+            value={dayOfWeek}
+            onChange={setDayOfWeek}
+            options={WEEKDAYS.map((d) => ({ value: String(d.value), label: d.label }))}
+            placeholder="Choisir un jour"
+          />
+          <View style={styles.spacer} />
+        </>
+      )}
+
+      {periodicity !== 'unique' && (
+        <>
+          <Text style={styles.label}>Depuis quand</Text>
+          <View style={styles.chipRow}>
+            <TouchableOpacity
+              style={[styles.chip, startMode === 'now' && styles.chipActive]}
+              onPress={() => setStartMode('now')}
+            >
+              <Text style={startMode === 'now' ? styles.chipTextActive : styles.chipText}>A partir de maintenant</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.chip, startMode === 'custom' && styles.chipActive]}
+              onPress={() => setStartMode('custom')}
+            >
+              <Text style={startMode === 'custom' ? styles.chipTextActive : styles.chipText}>Date precise</Text>
+            </TouchableOpacity>
+          </View>
+          {startMode === 'custom' && <DatePickerInput value={startDate} onChange={setStartDate} />}
+        </>
+      )}
 
       <PrimaryButton
         title={submitting ? 'Enregistrement...' : submitLabel}
         onPress={onSubmit}
-        disabled={submitting || !name.trim() || !dueDate}
+        disabled={submitting || !isFormValid()}
         loading={submitting}
         style={styles.submitButton}
       />
@@ -175,7 +298,7 @@ export default function BoardingsScreen({ route, navigation }: Props) {
           <Card>
             <Text style={styles.cardTitle}>{item.name}</Text>
             <Text style={styles.cardSubtitle}>
-              {new Date(item.dueDate).toLocaleDateString('fr-FR')} — {getPeriodicityLabel(item.periodicity)}
+              {formatDueDate(item)} — {getPeriodicityLabel(item.periodicity)}
               {item.price != null ? ` — ${item.price} €` : ''}
             </Text>
             <View style={styles.cardActions}>
@@ -247,5 +370,6 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
   chipText: { color: colors.textPrimary },
   chipTextActive: { color: 'white', fontWeight: '600' },
+  spacer: { height: spacing.md },
   submitButton: { marginTop: spacing.sm },
 });
