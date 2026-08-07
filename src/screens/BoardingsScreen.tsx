@@ -23,6 +23,7 @@ export default function BoardingsScreen({ route, navigation }: Props) {
   const [periodicity, setPeriodicity] = useState<BoardingPeriodicity>('mensuel');
   const [dueDate, setDueDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<BoardingEntry | null>(null);
 
   const load = useCallback(() => {
     return api.listBoardings(animalId).then(setEntries).catch(showLoadError);
@@ -58,6 +59,34 @@ export default function BoardingsScreen({ route, navigation }: Props) {
       } else {
         showError(error);
       }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (entry: BoardingEntry) => {
+    setEditingEntry(entry);
+    setName(entry.name);
+    setPrice(entry.price != null ? String(entry.price) : '');
+    setPeriodicity(entry.periodicity);
+    setDueDate(entry.dueDate.slice(0, 10));
+  };
+
+  const onSaveEdit = async () => {
+    if (!editingEntry || !name.trim() || !dueDate) return;
+    setSubmitting(true);
+    try {
+      await api.updateBoarding(animalId, editingEntry.id, {
+        name: name.trim(),
+        price: price ? parseFloat(price) : undefined,
+        periodicity,
+        dueDate,
+      });
+      resetForm();
+      setEditingEntry(null);
+      load();
+    } catch (error) {
+      showError(error);
     } finally {
       setSubmitting(false);
     }
@@ -119,6 +148,9 @@ export default function BoardingsScreen({ route, navigation }: Props) {
                   {item.status === 'regle' ? 'Regle' : 'Non regle'}
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => openEditModal(item)}>
+                <Text style={styles.editLink}>Modifier</Text>
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => onDelete(item)}>
                 <Text style={styles.deleteLink}>Supprimer</Text>
               </TouchableOpacity>
@@ -169,6 +201,48 @@ export default function BoardingsScreen({ route, navigation }: Props) {
           <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Ajouter'}</Text>
         </TouchableOpacity>
       </AddModal>
+
+      <AddModal
+        visible={!!editingEntry}
+        title="Modifier l'echeance"
+        onClose={() => {
+          setEditingEntry(null);
+          resetForm();
+        }}
+      >
+        <TextInput style={styles.input} placeholder="Nom de la pension" value={name} onChangeText={setName} />
+        <TextInput
+          style={styles.input}
+          placeholder="Prix (€)"
+          keyboardType="decimal-pad"
+          value={price}
+          onChangeText={setPrice}
+        />
+
+        <Text style={styles.label}>Periodicite</Text>
+        <View style={styles.chipRow}>
+          {BOARDING_PERIODICITIES.map((p) => (
+            <TouchableOpacity
+              key={p.value}
+              style={[styles.chip, periodicity === p.value && styles.chipActive]}
+              onPress={() => setPeriodicity(p.value)}
+            >
+              <Text style={periodicity === p.value ? styles.chipTextActive : styles.chipText}>{p.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Echeance</Text>
+        <DatePickerInput value={dueDate} onChange={setDueDate} />
+
+        <TouchableOpacity
+          style={styles.submitButton}
+          onPress={onSaveEdit}
+          disabled={submitting || !name.trim() || !dueDate}
+        >
+          <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</Text>
+        </TouchableOpacity>
+      </AddModal>
     </>
   );
 }
@@ -184,6 +258,7 @@ const styles = StyleSheet.create({
   cardActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   statusPaid: { color: '#2E7D32', fontWeight: '600' },
   statusUnpaid: { color: '#B3452C', fontWeight: '600' },
+  editLink: { color: '#B8863B', fontWeight: '600' },
   deleteLink: { color: '#B3452C', fontWeight: '600' },
   empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
   label: { color: '#8A7B68', marginBottom: 8, marginTop: 4 },
