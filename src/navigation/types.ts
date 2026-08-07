@@ -9,7 +9,7 @@ export type AppStackParamList = {
   Households: undefined;
   Animals: { householdId: number; householdName: string };
   AnimalDetail: { animalId: number; animalName: string; householdId: number };
-  MedicalProfile: { animalId: number; animalName: string; species: string };
+  MedicalProfile: { animalId: number; animalName: string; species: string; householdId: number };
   HealthEntries: { animalId: number; animalName: string; species: string };
   Calendar: { householdId: number; householdName: string };
   Documents: { householdId: number; animalId?: number };

@@ -107,7 +107,12 @@ export default function AppointmentFollowUpScreen({ route, navigation }: Props) 
 
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
+            navigation.navigate('MedicalProfile', {
+              animalId,
+              animalName: animal.name,
+              species: animal.species,
+              householdId: animal.householdId,
+            })
           }
         >
           <Card>
