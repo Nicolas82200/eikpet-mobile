@@ -49,6 +49,13 @@ export interface MedicalProfile {
   referringVetPhone: string | null;
 }
 
+export interface BehavioralNote {
+  id: number;
+  animalId: number;
+  note: string;
+  createdAt: string;
+}
+
 export interface Treatment {
   id: number;
   animalId: number;
@@ -203,6 +210,7 @@ export interface EmergencySheet {
   medicalProfile: MedicalProfile | null;
   treatments: Treatment[];
   providers: Provider[];
+  behavioralNotes: BehavioralNote[];
 }
 
 export interface EmergencyShareLink {
