@@ -29,7 +29,6 @@ import BudgetScreen from '../screens/BudgetScreen';
 import RidingSessionsScreen from '../screens/RidingSessionsScreen';
 import ProvidersMapScreen from '../screens/ProvidersMapScreen';
 import PracticalInfoScreen from '../screens/PracticalInfoScreen';
-import WeightCurveScreen from '../screens/WeightCurveScreen';
 import EmergencySheetScreen from '../screens/EmergencySheetScreen';
 import AnimalBudgetScreen from '../screens/AnimalBudgetScreen';
 
@@ -132,7 +131,6 @@ function AppNavigator() {
       <AppStack.Screen name="RidingSessions" component={RidingSessionsScreen} options={{ title: 'Seances' }} />
       <AppStack.Screen name="ProvidersMap" component={ProvidersMapScreen} options={{ title: 'Carte' }} />
       <AppStack.Screen name="PracticalInfo" component={PracticalInfoScreen} options={{ title: 'Infos pratiques' }} />
-      <AppStack.Screen name="WeightCurve" component={WeightCurveScreen} options={{ title: 'Courbe de poids' }} />
       <AppStack.Screen
         name="EmergencySheet"
         component={EmergencySheetScreen}

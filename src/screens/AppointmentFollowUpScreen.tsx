@@ -9,6 +9,7 @@ import Card from '../components/Card';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import LoadingScreen from '../components/LoadingScreen';
 import PrimaryButton from '../components/PrimaryButton';
+import { getHealthEntryTypeLabel } from '../data/healthEntryTypes';
 import { cancelAppointmentFollowUp } from '../notifications/localReminders';
 import { showError, showLoadError } from '../utils/errorHandling';
 import { formatTime } from '../utils/formatting';
@@ -66,7 +67,7 @@ export default function AppointmentFollowUpScreen({ route, navigation }: Props) 
         <Text style={styles.title}>Suivi du rendez-vous — {animal.name}</Text>
         {entry && (
           <Text style={styles.subtitle}>
-            {entry.customTypeLabel ?? entry.type} — {entry.scheduledDate}
+            {entry.customTypeLabel ?? getHealthEntryTypeLabel(entry.type)} — {entry.scheduledDate}
             {entry.scheduledTime ? ` a ${formatTime(entry.scheduledTime)}` : ''}
           </Text>
         )}

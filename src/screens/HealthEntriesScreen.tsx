@@ -10,10 +10,12 @@ import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
 import Card from '../components/Card';
 import DatePickerInput from '../components/DatePickerInput';
+import Dropdown from '../components/Dropdown';
 import PrimaryButton from '../components/PrimaryButton';
+import ReminderPicker from '../components/ReminderPicker';
 import ScreenHeader from '../components/ScreenHeader';
 import TimePickerInput from '../components/TimePickerInput';
-import RecurrencePicker from '../components/RecurrencePicker';
+import { HEALTH_ENTRY_TYPES, getHealthEntryTypeLabel } from '../data/healthEntryTypes';
 import { getVaccinesForSpecies } from '../data/vaccines';
 import { getDewormersForSpecies } from '../data/dewormers';
 import { scheduleAppointmentFollowUp, cancelAppointmentFollowUp } from '../notifications/localReminders';
@@ -24,9 +26,7 @@ import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
 
-const TYPES: HealthEntryType[] = ['vaccin', 'vermifuge', 'rdv_veto', 'osteo', 'dentiste_equin', 'marechal', 'autre'];
-
-function getPrecisionOptions(type: HealthEntryType, species: string): readonly string[] {
+function getPrecisionOptions(type: HealthEntryType | null, species: string): readonly string[] {
   if (type === 'vaccin') return getVaccinesForSpecies(species);
   if (type === 'vermifuge') return getDewormersForSpecies(species);
   return [];
@@ -36,7 +36,7 @@ export default function HealthEntriesScreen({ route }: Props) {
   const { animalId, animalName, species } = route.params;
   const [entries, setEntries] = useState<HealthEntry[]>([]);
   const [vaccinationSchedule, setVaccinationSchedule] = useState<VaccinationScheduleStep[]>([]);
-  const [type, setType] = useState<HealthEntryType>('vaccin');
+  const [type, setType] = useState<HealthEntryType | null>(null);
   const [customTypeLabel, setCustomTypeLabel] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
@@ -69,8 +69,18 @@ export default function HealthEntriesScreen({ route }: Props) {
     setModalVisible(true);
   };
 
+  const resetCreateForm = () => {
+    setType(null);
+    setCustomTypeLabel('');
+    setScheduledDate('');
+    setScheduledTime('');
+    setRecurrenceMonths(null);
+    setIsPastAppointment(false);
+    setCreatePrice('');
+  };
+
   const onCreate = async () => {
-    if (!scheduledDate) return;
+    if (!type || !scheduledDate) return;
     try {
       const entry = await api.createHealthEntry(animalId, {
         type,
@@ -79,24 +89,19 @@ export default function HealthEntriesScreen({ route }: Props) {
         customTypeLabel: customTypeLabel.trim() || undefined,
         recurrenceMonths: recurrenceMonths ?? undefined,
         status: isPastAppointment ? 'fait' : 'prevu',
-        price: createPrice ? parseFloat(createPrice) : undefined,
+        price: isPastAppointment && createPrice ? parseFloat(createPrice) : undefined,
       });
       if (scheduledTime) {
         await scheduleAppointmentFollowUp({
           animalId,
           animalName,
           entryId: entry.id,
-          entryLabel: customTypeLabel.trim() || type,
+          entryLabel: customTypeLabel.trim() || getHealthEntryTypeLabel(type),
           scheduledDate,
           scheduledTime,
         });
       }
-      setCustomTypeLabel('');
-      setScheduledDate('');
-      setScheduledTime('');
-      setRecurrenceMonths(null);
-      setIsPastAppointment(false);
-      setCreatePrice('');
+      resetCreateForm();
       setModalVisible(false);
       load();
     } catch (error) {
@@ -192,7 +197,7 @@ export default function HealthEntriesScreen({ route }: Props) {
         }
         renderItem={({ item }) => (
           <Card>
-            <Text style={styles.cardTitle}>{item.customTypeLabel ?? item.type}</Text>
+            <Text style={styles.cardTitle}>{item.customTypeLabel ?? getHealthEntryTypeLabel(item.type)}</Text>
             <Text style={styles.cardSubtitle}>
               {item.scheduledDate}
               {item.scheduledTime ? ` a ${formatTime(item.scheduledTime)}` : ''} —{' '}
@@ -218,18 +223,26 @@ export default function HealthEntriesScreen({ route }: Props) {
         ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l&apos;instant</Text>}
       />
 
-      <AddModal visible={modalVisible} title="Ajouter une entree" onClose={() => setModalVisible(false)}>
-        <View style={styles.typeRow}>
-          {TYPES.map((t) => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.typeChip, t === type && styles.typeChipActive]}
-              onPress={() => setType(t)}
-            >
-              <Text style={t === type ? styles.typeChipTextActive : styles.typeChipText}>{t}</Text>
-            </TouchableOpacity>
-          ))}
+      <AddModal
+        visible={modalVisible}
+        title="Ajouter une entree"
+        onClose={() => {
+          setModalVisible(false);
+          resetCreateForm();
+        }}
+      >
+        <View style={styles.switchRow}>
+          <Text style={styles.label}>Rendez-vous deja passe</Text>
+          <Switch value={isPastAppointment} onValueChange={setIsPastAppointment} />
         </View>
+
+        <Dropdown
+          value={type}
+          onChange={setType}
+          options={HEALTH_ENTRY_TYPES}
+          placeholder="Type d'entree"
+        />
+        <View style={styles.spacer} />
         <AutocompleteInput
           value={customTypeLabel}
           onChange={setCustomTypeLabel}
@@ -238,21 +251,19 @@ export default function HealthEntriesScreen({ route }: Props) {
         />
         <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
         <TimePickerInput value={scheduledTime} onChange={setScheduledTime} placeholder="Heure (optionnel)" />
-        <RecurrencePicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
+        <ReminderPicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
 
-        <View style={styles.switchRow}>
-          <Text style={styles.label}>Rendez-vous deja passe</Text>
-          <Switch value={isPastAppointment} onValueChange={setIsPastAppointment} />
-        </View>
-        <TextInput
-          style={styles.input}
-          placeholder="Prix paye (optionnel)"
-          keyboardType="decimal-pad"
-          value={createPrice}
-          onChangeText={setCreatePrice}
-        />
+        {isPastAppointment && (
+          <TextInput
+            style={styles.input}
+            placeholder="Prix paye (optionnel)"
+            keyboardType="decimal-pad"
+            value={createPrice}
+            onChangeText={setCreatePrice}
+          />
+        )}
 
-        <PrimaryButton title="Ajouter" onPress={onCreate} />
+        <PrimaryButton title="Ajouter" onPress={onCreate} disabled={!type || !scheduledDate} />
       </AddModal>
 
       <AddModal visible={!!reportEntry} title="Compte-rendu" onClose={() => setReportEntry(null)}>
@@ -307,11 +318,7 @@ const styles = StyleSheet.create({
   cardActionText: { color: colors.accent, fontWeight: '600' },
   cardActionTextDanger: { color: colors.danger, fontWeight: '600' },
   empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
-  typeChip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
-  typeChipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  typeChipText: { color: colors.textPrimary },
-  typeChipTextActive: { color: 'white' },
+  spacer: { height: spacing.md },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

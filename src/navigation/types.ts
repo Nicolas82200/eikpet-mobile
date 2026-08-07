@@ -19,7 +19,6 @@ export type AppStackParamList = {
   Budget: { householdId: number; householdName: string };
   AnimalBudget: { animalId: number; animalName: string };
   RidingSessions: { animalId: number; animalName: string };
-  WeightCurve: { animalId: number; animalName: string };
   EmergencySheet: { animalId: number; animalName: string };
   ProvidersMap: { householdId: number; householdName: string };
   AppointmentFollowUp: { animalId: number; entryId: number };

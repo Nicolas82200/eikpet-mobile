@@ -9,6 +9,7 @@ import { PROVIDER_TYPES, getProviderTypeLabel } from '../data/providerTypes';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import Card from '../components/Card';
+import Dropdown from '../components/Dropdown';
 import PrimaryButton from '../components/PrimaryButton';
 import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
@@ -21,7 +22,7 @@ export default function ProvidersScreen({ route, navigation }: Props) {
   const { householdId, householdName } = route.params;
   const [providers, setProviders] = useState<Provider[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [type, setType] = useState<ProviderType>('veto');
+  const [type, setType] = useState<ProviderType | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -36,14 +37,14 @@ export default function ProvidersScreen({ route, navigation }: Props) {
   useFocusEffect(trigger);
 
   const resetForm = () => {
-    setType('veto');
+    setType(null);
     setName('');
     setPhone('');
     setAddress('');
   };
 
   const onCreate = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !type) return;
     setSubmitting(true);
     try {
       await api.createProvider(householdId, {
@@ -71,7 +72,7 @@ export default function ProvidersScreen({ route, navigation }: Props) {
   };
 
   const onSaveEdit = async () => {
-    if (!editingProvider || !name.trim()) return;
+    if (!editingProvider || !name.trim() || !type) return;
     setSubmitting(true);
     try {
       await api.updateProvider(editingProvider.id, {
@@ -111,17 +112,8 @@ export default function ProvidersScreen({ route, navigation }: Props) {
   const renderForm = (onSubmit: () => void, submitLabel: string) => (
     <>
       <Text style={styles.label}>Type</Text>
-      <View style={styles.typeRow}>
-        {PROVIDER_TYPES.map((t) => (
-          <TouchableOpacity
-            key={t.value}
-            style={[styles.chip, type === t.value && styles.chipActive]}
-            onPress={() => setType(t.value)}
-          >
-            <Text style={type === t.value ? styles.chipTextActive : styles.chipText}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <Dropdown value={type} onChange={setType} options={PROVIDER_TYPES} placeholder="Type d'intervenant" />
+      <View style={styles.spacer} />
 
       <TextInput style={styles.input} placeholder="Nom" value={name} onChangeText={setName} />
       <TextInput
@@ -136,7 +128,7 @@ export default function ProvidersScreen({ route, navigation }: Props) {
       <PrimaryButton
         title={submitting ? 'Enregistrement...' : submitLabel}
         onPress={onSubmit}
-        disabled={submitting || !name.trim()}
+        disabled={submitting || !name.trim() || !type}
         loading={submitting}
       />
     </>
@@ -223,11 +215,7 @@ const styles = StyleSheet.create({
   deleteLink: { color: colors.danger, fontWeight: '600' },
   empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
   label: { color: colors.textSecondary, marginBottom: spacing.sm },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
-  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
-  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  chipText: { color: colors.textPrimary },
-  chipTextActive: { color: 'white', fontWeight: '600' },
+  spacer: { height: spacing.md },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
