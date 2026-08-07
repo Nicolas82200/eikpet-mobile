@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
-import type { MedicalProfile, SurgicalHistoryEntry, Treatment } from '../types/api';
+import type { BehavioralNote, MedicalProfile, SurgicalHistoryEntry, Treatment } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
@@ -66,6 +66,10 @@ export default function MedicalProfileScreen({ route }: Props) {
   const [performedOn, setPerformedOn] = useState('');
   const [surgicalModalVisible, setSurgicalModalVisible] = useState(false);
 
+  const [behavioralNotes, setBehavioralNotes] = useState<BehavioralNote[]>([]);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+
   const [openSection, setOpenSection] = useState<string | null>(null);
   const toggleSection = (key: string) => setOpenSection((current) => (current === key ? null : key));
 
@@ -80,6 +84,7 @@ export default function MedicalProfileScreen({ route }: Props) {
       .catch(showLoadError);
     api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
     api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(showLoadError);
+    api.listBehavioralNotes(animalId).then(setBehavioralNotes).catch(showLoadError);
   }, [animalId]);
 
   useFocusEffect(load);
@@ -223,6 +228,38 @@ export default function MedicalProfileScreen({ route }: Props) {
     ]);
   };
 
+  const onAddNote = async () => {
+    if (!noteDraft.trim()) return;
+    setSavingNote(true);
+    try {
+      await api.createBehavioralNote(animalId, noteDraft.trim());
+      setNoteDraft('');
+      api.listBehavioralNotes(animalId).then(setBehavioralNotes).catch(showLoadError);
+    } catch (error) {
+      showError(error);
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  const onDeleteNote = (note: BehavioralNote) => {
+    Alert.alert('Supprimer cette note ?', note.note, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.deleteBehavioralNote(animalId, note.id);
+            setBehavioralNotes((prev) => prev.filter((n) => n.id !== note.id));
+          } catch (error) {
+            showError(error);
+          }
+        },
+      },
+    ]);
+  };
+
   const antecedentsIncomplete =
     getFieldState(profile.chronicConditions, NONE_LABELS.chronicConditions) === 'empty' ||
     getFieldState(profile.allergies, NONE_LABELS.allergies) === 'empty' ||
@@ -274,12 +311,29 @@ export default function MedicalProfileScreen({ route }: Props) {
             />
 
             <Text style={styles.label}>Notes comportementales</Text>
-            <NullableField
-              value={profile.behavioralNotes ?? ''}
-              onChange={(v) => setField('behavioralNotes', v)}
-              options={[]}
-              noneLabel={NONE_LABELS.behavioralNotes}
-            />
+            {behavioralNotes.map((n) => (
+              <View key={n.id} style={styles.noteRow}>
+                <Text style={styles.noteText}>{n.note}</Text>
+                <TouchableOpacity onPress={() => onDeleteNote(n)}>
+                  <Text style={styles.deleteLink}>Supprimer</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            {behavioralNotes.length === 0 && <Text style={styles.empty}>Aucune note pour l&apos;instant</Text>}
+            <View style={styles.noteAddRow}>
+              <TextInput
+                style={styles.noteInput}
+                placeholder="Ex : aime les gratouilles"
+                value={noteDraft}
+                onChangeText={setNoteDraft}
+              />
+              <PrimaryButton
+                title={savingNote ? '...' : 'Ajouter'}
+                onPress={onAddNote}
+                disabled={savingNote || !noteDraft.trim()}
+                style={styles.noteAddButton}
+              />
+            </View>
 
             <Text style={styles.label}>Groupe sanguin</Text>
             <NullableField
@@ -497,6 +551,26 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   accordionAddRow: { alignItems: 'flex-end', marginBottom: spacing.sm },
+  noteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  noteText: { color: colors.textPrimary, flexShrink: 1, marginRight: spacing.md },
+  noteAddRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, alignItems: 'center' },
+  noteInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  noteAddButton: { paddingHorizontal: spacing.lg },
   listCard: { backgroundColor: colors.surface, marginBottom: spacing.sm, padding: spacing.md },
   listCardTitle: { fontWeight: '600' },
   listCardSubtitle: { color: colors.textSecondary, marginTop: 2 },

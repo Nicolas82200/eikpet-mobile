@@ -15,7 +15,7 @@ import { colors, spacing, typography } from '../theme/colors';
 type Props = NativeStackScreenProps<AppStackParamList, 'EmergencySheet'>;
 
 function buildShareText(sheet: EmergencySheet): string {
-  const { animal, medicalProfile, treatments, providers } = sheet;
+  const { animal, medicalProfile, treatments, providers, behavioralNotes } = sheet;
   const lines: string[] = [];
   lines.push(`FICHE D'URGENCE — ${animal.name}`);
   lines.push(`${animal.species}${animal.breed ? ` — ${animal.breed}` : ''}`);
@@ -29,7 +29,6 @@ function buildShareText(sheet: EmergencySheet): string {
     if (medicalProfile.chronicConditions) lines.push(`Maladies chroniques : ${medicalProfile.chronicConditions}`);
     if (medicalProfile.allergies) lines.push(`Allergies : ${medicalProfile.allergies}`);
     if (medicalProfile.dietaryNeeds) lines.push(`Regime particulier : ${medicalProfile.dietaryNeeds}`);
-    if (medicalProfile.behavioralNotes) lines.push(`Notes comportementales : ${medicalProfile.behavioralNotes}`);
     if (medicalProfile.bloodType) lines.push(`Groupe sanguin : ${medicalProfile.bloodType}`);
     if (medicalProfile.referringVetName) {
       lines.push(
@@ -37,6 +36,12 @@ function buildShareText(sheet: EmergencySheet): string {
       );
     }
     if (medicalProfile.insuranceProvider) lines.push(`Assurance : ${medicalProfile.insuranceProvider}`);
+  }
+
+  if (behavioralNotes.length > 0) {
+    lines.push('');
+    lines.push('--- Notes comportementales ---');
+    behavioralNotes.forEach((n) => lines.push(n.note));
   }
 
   if (treatments.length > 0) {
@@ -118,7 +123,7 @@ export default function EmergencySheetScreen({ route }: Props) {
     return <LoadingScreen />;
   }
 
-  const { animal, medicalProfile, treatments, providers } = sheet;
+  const { animal, medicalProfile, treatments, providers, behavioralNotes } = sheet;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -144,9 +149,6 @@ export default function EmergencySheetScreen({ route }: Props) {
         )}
         {medicalProfile?.allergies && <Text style={styles.line}>Allergies : {medicalProfile.allergies}</Text>}
         {medicalProfile?.dietaryNeeds && <Text style={styles.line}>Regime particulier : {medicalProfile.dietaryNeeds}</Text>}
-        {medicalProfile?.behavioralNotes && (
-          <Text style={styles.line}>Notes comportementales : {medicalProfile.behavioralNotes}</Text>
-        )}
         {medicalProfile?.bloodType && <Text style={styles.line}>Groupe sanguin : {medicalProfile.bloodType}</Text>}
         {medicalProfile?.insuranceProvider && (
           <Text style={styles.line}>Assurance : {medicalProfile.insuranceProvider}</Text>
@@ -162,6 +164,16 @@ export default function EmergencySheetScreen({ route }: Props) {
             </Text>
           </TouchableOpacity>
         )}
+      </Card>
+
+      <Card>
+        <Text style={styles.sectionTitle}>Notes comportementales</Text>
+        {behavioralNotes.length === 0 && <Text style={styles.emptyHint}>Aucune note comportementale.</Text>}
+        {behavioralNotes.map((n) => (
+          <Text key={n.id} style={styles.line}>
+            {n.note}
+          </Text>
+        ))}
       </Card>
 
       <Card>

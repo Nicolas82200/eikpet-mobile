@@ -6,6 +6,7 @@ import type {
   Animal,
   AnimalBudget,
   AuthTokens,
+  BehavioralNote,
   BoardingEntry,
   CalendarEntry,
   DocumentCategory,
@@ -213,6 +214,18 @@ export function createTreatment(
 
 export function deleteTreatment(animalId: number, treatmentId: number): Promise<void> {
   return apiRequest(`/animals/${animalId}/treatments/${treatmentId}`, { method: 'DELETE' });
+}
+
+export function listBehavioralNotes(animalId: number): Promise<BehavioralNote[]> {
+  return apiRequest(`/animals/${animalId}/behavioral-notes`);
+}
+
+export function createBehavioralNote(animalId: number, note: string): Promise<BehavioralNote> {
+  return apiRequest(`/animals/${animalId}/behavioral-notes`, { method: 'POST', body: { note } });
+}
+
+export function deleteBehavioralNote(animalId: number, noteId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/behavioral-notes/${noteId}`, { method: 'DELETE' });
 }
 
 export function listSurgicalHistory(animalId: number): Promise<SurgicalHistoryEntry[]> {
