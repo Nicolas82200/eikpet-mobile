@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -37,6 +37,8 @@ export default function HealthEntriesScreen({ route }: Props) {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [recurrenceMonths, setRecurrenceMonths] = useState<number | null>(null);
+  const [isPastAppointment, setIsPastAppointment] = useState(false);
+  const [createPrice, setCreatePrice] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
 
   const [reportEntry, setReportEntry] = useState<HealthEntry | null>(null);
@@ -58,6 +60,8 @@ export default function HealthEntriesScreen({ route }: Props) {
     setScheduledDate(step.targetDate);
     setScheduledTime('');
     setRecurrenceMonths(null);
+    setIsPastAppointment(false);
+    setCreatePrice('');
     setModalVisible(true);
   };
 
@@ -70,6 +74,8 @@ export default function HealthEntriesScreen({ route }: Props) {
         scheduledTime: scheduledTime || undefined,
         customTypeLabel: customTypeLabel.trim() || undefined,
         recurrenceMonths: recurrenceMonths ?? undefined,
+        status: isPastAppointment ? 'fait' : 'prevu',
+        price: createPrice ? parseFloat(createPrice) : undefined,
       });
       if (scheduledTime) {
         await scheduleAppointmentFollowUp({
@@ -85,6 +91,8 @@ export default function HealthEntriesScreen({ route }: Props) {
       setScheduledDate('');
       setScheduledTime('');
       setRecurrenceMonths(null);
+      setIsPastAppointment(false);
+      setCreatePrice('');
       setModalVisible(false);
       load();
     } catch (error) {
@@ -227,6 +235,19 @@ export default function HealthEntriesScreen({ route }: Props) {
         <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
         <TimePickerInput value={scheduledTime} onChange={setScheduledTime} placeholder="Heure (optionnel)" />
         <RecurrencePicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
+
+        <View style={styles.switchRow}>
+          <Text style={styles.label}>Rendez-vous deja passe</Text>
+          <Switch value={isPastAppointment} onValueChange={setIsPastAppointment} />
+        </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Prix paye (optionnel)"
+          keyboardType="decimal-pad"
+          value={createPrice}
+          onChangeText={setCreatePrice}
+        />
+
         <TouchableOpacity style={styles.addButton} onPress={onCreate}>
           <Text style={styles.addButtonText}>Ajouter</Text>
         </TouchableOpacity>
@@ -290,6 +311,8 @@ const styles = StyleSheet.create({
   typeChipText: { color: '#3A3226' },
   typeChipTextActive: { color: 'white' },
   input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
+  label: { color: '#8A7B68' },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
   addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
   addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
