@@ -286,6 +286,14 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
         <View style={styles.dashboardGrid}>
           <TouchableOpacity
             style={styles.dashboardTile}
+            onPress={() => navigation.navigate('EmergencySheet', { animalId, animalName: animal.name })}
+          >
+            <Text style={styles.dashboardTileIcon}>🚨</Text>
+            <Text style={styles.dashboardTileTitle}>Fiche d&apos;urgence</Text>
+            <Text style={styles.dashboardTileSubtitle}>Resume a partager en urgence, toujours gratuit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dashboardTile}
             onPress={() =>
               navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
             }

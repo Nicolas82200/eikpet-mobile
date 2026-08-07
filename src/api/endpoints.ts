@@ -11,6 +11,7 @@ import type {
   CalendarEntry,
   DocumentCategory,
   DocumentRecord,
+  EmergencySheet,
   Household,
   HouseholdBudget,
   HouseholdMember,
@@ -157,6 +158,12 @@ export async function uploadAnimalPhoto(
   const formData = new FormData();
   formData.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
   return apiUpload(`/animals/${animalId}/photo`, formData);
+}
+
+// --- Fiche d'urgence ---
+
+export function getEmergencySheet(animalId: number): Promise<EmergencySheet> {
+  return apiRequest(`/animals/${animalId}/emergency-sheet`);
 }
 
 // --- Fiche medicale ---
