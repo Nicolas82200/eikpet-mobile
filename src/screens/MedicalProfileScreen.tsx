@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
-import type { BehavioralNote, MedicalProfile, SurgicalHistoryEntry, Treatment } from '../types/api';
+import type { BehavioralNote, MedicalProfile, Provider, SurgicalHistoryEntry, Treatment } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
@@ -102,6 +102,7 @@ export default function MedicalProfileScreen({ route }: Props) {
   const [newVetPhone, setNewVetPhone] = useState('');
   const [newVetAddress, setNewVetAddress] = useState('');
   const [savingVet, setSavingVet] = useState(false);
+  const [vetProviders, setVetProviders] = useState<Provider[]>([]);
 
   const load = useCallback(() => {
     api
@@ -115,7 +116,11 @@ export default function MedicalProfileScreen({ route }: Props) {
     api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
     api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(showLoadError);
     api.listBehavioralNotes(animalId).then(setBehavioralNotes).catch(showLoadError);
-  }, [animalId]);
+    api
+      .listProviders(householdId)
+      .then((providers) => setVetProviders(providers.filter((p) => p.type === 'veto')))
+      .catch(() => setVetProviders([]));
+  }, [animalId, householdId]);
 
   useFocusEffect(load);
 
@@ -334,6 +339,7 @@ export default function MedicalProfileScreen({ route }: Props) {
       await api.linkAnimalProvider(animalId, provider.id);
       setField('referringVetName', provider.name);
       setField('referringVetPhone', provider.phone ?? '');
+      setVetProviders((prev) => [...prev, provider]);
       setNewVetName('');
       setNewVetPhone('');
       setNewVetAddress('');
@@ -342,6 +348,15 @@ export default function MedicalProfileScreen({ route }: Props) {
       showError(error);
     } finally {
       setSavingVet(false);
+    }
+  };
+
+  const onSelectVetName = (name: string) => {
+    setField('referringVetName', name);
+    const matched = vetProviders.find((p) => p.name.toLowerCase() === name.trim().toLowerCase());
+    if (matched) {
+      setField('referringVetPhone', matched.phone ?? '');
+      api.linkAnimalProvider(animalId, matched.id).catch(() => undefined);
     }
   };
 
@@ -481,8 +496,8 @@ export default function MedicalProfileScreen({ route }: Props) {
             <Text style={styles.label}>Nom</Text>
             <NullableField
               value={profile.referringVetName ?? ''}
-              onChange={(v) => setField('referringVetName', v)}
-              options={[]}
+              onChange={onSelectVetName}
+              options={vetProviders.map((p) => p.name)}
               noneLabel={NONE_LABELS.referringVetName}
             />
             {hasVet && (
