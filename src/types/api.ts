@@ -73,7 +73,9 @@ export interface SurgicalHistoryEntry {
   id: number;
   animalId: number;
   procedureName: string;
-  performedOn: string | null;
+  performedYear: number;
+  performedMonth: number | null;
+  performedDay: number | null;
   notes: string | null;
 }
 

@@ -45,6 +45,17 @@ const DURATION_UNIT_OPTIONS: { value: DurationUnit; label: string }[] = [
   { value: 'vie', label: 'A vie' },
 ];
 
+function formatPartialDate(entry: { performedYear: number; performedMonth: number | null; performedDay: number | null }): string {
+  const { performedYear, performedMonth, performedDay } = entry;
+  if (performedMonth && performedDay) {
+    return `${String(performedDay).padStart(2, '0')}/${String(performedMonth).padStart(2, '0')}/${performedYear}`;
+  }
+  if (performedMonth) {
+    return `${String(performedMonth).padStart(2, '0')}/${performedYear}`;
+  }
+  return String(performedYear);
+}
+
 function todayIsoDate(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -74,7 +85,9 @@ export default function MedicalProfileScreen({ route }: Props) {
 
   const [surgicalHistory, setSurgicalHistory] = useState<SurgicalHistoryEntry[]>([]);
   const [procedureName, setProcedureName] = useState('');
-  const [performedOn, setPerformedOn] = useState('');
+  const [performedYear, setPerformedYear] = useState('');
+  const [performedMonth, setPerformedMonth] = useState('');
+  const [performedDay, setPerformedDay] = useState('');
   const [surgicalModalVisible, setSurgicalModalVisible] = useState(false);
 
   const [behavioralNotes, setBehavioralNotes] = useState<BehavioralNote[]>([]);
@@ -232,11 +245,19 @@ export default function MedicalProfileScreen({ route }: Props) {
   };
 
   const onAddSurgicalHistory = async () => {
-    if (!procedureName.trim()) return;
+    const year = parseInt(performedYear, 10);
+    if (!procedureName.trim() || !year) return;
     try {
-      await api.createSurgicalHistory(animalId, { procedureName: procedureName.trim(), performedOn: performedOn || null });
+      await api.createSurgicalHistory(animalId, {
+        procedureName: procedureName.trim(),
+        performedYear: year,
+        performedMonth: performedMonth ? parseInt(performedMonth, 10) : null,
+        performedDay: performedDay ? parseInt(performedDay, 10) : null,
+      });
       setProcedureName('');
-      setPerformedOn('');
+      setPerformedYear('');
+      setPerformedMonth('');
+      setPerformedDay('');
       setSurgicalModalVisible(false);
       api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(showLoadError);
     } catch (error) {
@@ -487,7 +508,7 @@ export default function MedicalProfileScreen({ route }: Props) {
             {surgicalHistory.map((s) => (
               <Card key={s.id} style={styles.listCard}>
                 <Text style={styles.listCardTitle}>{s.procedureName}</Text>
-                {s.performedOn && <Text style={styles.listCardSubtitle}>{s.performedOn}</Text>}
+                <Text style={styles.listCardSubtitle}>{formatPartialDate(s)}</Text>
                 <TouchableOpacity onPress={() => onDeleteSurgicalHistory(s)}>
                   <Text style={styles.deleteLink}>Supprimer</Text>
                 </TouchableOpacity>
@@ -571,7 +592,13 @@ export default function MedicalProfileScreen({ route }: Props) {
       <AddModal
         visible={surgicalModalVisible}
         title="Ajouter un antecedent chirurgical"
-        onClose={() => setSurgicalModalVisible(false)}
+        onClose={() => {
+          setSurgicalModalVisible(false);
+          setProcedureName('');
+          setPerformedYear('');
+          setPerformedMonth('');
+          setPerformedDay('');
+        }}
       >
         <AutocompleteInput
           value={procedureName}
@@ -580,8 +607,34 @@ export default function MedicalProfileScreen({ route }: Props) {
           placeholder="Operation"
           autoFocus
         />
-        <DatePickerInput value={performedOn} onChange={setPerformedOn} placeholder="Date de l'operation" />
-        <PrimaryButton title="Ajouter" onPress={onAddSurgicalHistory} />
+        <Text style={styles.label}>Date (annee obligatoire, mois/jour si connus)</Text>
+        <View style={styles.dateRow}>
+          <TextInput
+            style={[styles.input, styles.dateYearInput]}
+            placeholder="Annee"
+            keyboardType="number-pad"
+            maxLength={4}
+            value={performedYear}
+            onChangeText={setPerformedYear}
+          />
+          <TextInput
+            style={[styles.input, styles.dateSmallInput]}
+            placeholder="Mois"
+            keyboardType="number-pad"
+            maxLength={2}
+            value={performedMonth}
+            onChangeText={setPerformedMonth}
+          />
+          <TextInput
+            style={[styles.input, styles.dateSmallInput]}
+            placeholder="Jour"
+            keyboardType="number-pad"
+            maxLength={2}
+            value={performedDay}
+            onChangeText={setPerformedDay}
+          />
+        </View>
+        <PrimaryButton title="Ajouter" onPress={onAddSurgicalHistory} disabled={!procedureName.trim() || !performedYear} />
       </AddModal>
     </>
   );
@@ -630,6 +683,9 @@ const styles = StyleSheet.create({
   durationValueInput: { flex: 1 },
   durationUnitField: { flex: 2 },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm, marginBottom: spacing.md },
+  dateRow: { flexDirection: 'row', gap: spacing.sm },
+  dateYearInput: { flex: 2 },
+  dateSmallInput: { flex: 1 },
   listCard: { backgroundColor: colors.surface, marginBottom: spacing.sm, padding: spacing.md },
   listCardTitle: { fontWeight: '600' },
   listCardSubtitle: { color: colors.textSecondary, marginTop: 2 },
