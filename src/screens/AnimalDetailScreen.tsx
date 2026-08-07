@@ -200,7 +200,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
         <WarningBanner
           warnings={warnings}
           onPress={() =>
-            navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
+            navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species, householdId })
           }
         />
 
@@ -298,7 +298,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
             style={styles.dashboardTile}
             activeOpacity={0.85}
             onPress={() =>
-              navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
+              navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species, householdId })
             }
           >
             <Text style={styles.dashboardTileIcon}>🩺</Text>

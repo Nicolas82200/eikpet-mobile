@@ -65,7 +65,7 @@ function todayIsoDate(): string {
 }
 
 export default function MedicalProfileScreen({ route }: Props) {
-  const { animalId, animalName, species } = route.params;
+  const { animalId, animalName, species, householdId } = route.params;
   const [profile, setProfile] = useState<Partial<MedicalProfile>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const loadedRef = useRef(false);
@@ -96,6 +96,12 @@ export default function MedicalProfileScreen({ route }: Props) {
 
   const [openSection, setOpenSection] = useState<string | null>(null);
   const toggleSection = (key: string) => setOpenSection((current) => (current === key ? null : key));
+
+  const [vetModalVisible, setVetModalVisible] = useState(false);
+  const [newVetName, setNewVetName] = useState('');
+  const [newVetPhone, setNewVetPhone] = useState('');
+  const [newVetAddress, setNewVetAddress] = useState('');
+  const [savingVet, setSavingVet] = useState(false);
 
   const load = useCallback(() => {
     api
@@ -315,6 +321,30 @@ export default function MedicalProfileScreen({ route }: Props) {
     ]);
   };
 
+  const onAddVet = async () => {
+    if (!newVetName.trim()) return;
+    setSavingVet(true);
+    try {
+      const provider = await api.createProvider(householdId, {
+        type: 'veto',
+        name: newVetName.trim(),
+        phone: newVetPhone.trim() || null,
+        address: newVetAddress.trim() || null,
+      });
+      await api.linkAnimalProvider(animalId, provider.id);
+      setField('referringVetName', provider.name);
+      setField('referringVetPhone', provider.phone ?? '');
+      setNewVetName('');
+      setNewVetPhone('');
+      setNewVetAddress('');
+      setVetModalVisible(false);
+    } catch (error) {
+      showError(error);
+    } finally {
+      setSavingVet(false);
+    }
+  };
+
   const antecedentsIncomplete =
     getFieldState(profile.chronicConditions, NONE_LABELS.chronicConditions) === 'empty' ||
     getFieldState(profile.allergies, NONE_LABELS.allergies) === 'empty' ||
@@ -466,6 +496,12 @@ export default function MedicalProfileScreen({ route }: Props) {
                 />
               </>
             )}
+            <PrimaryButton
+              title="Ajouter un nouveau veterinaire"
+              variant="outline"
+              onPress={() => setVetModalVisible(true)}
+              style={styles.addVetButton}
+            />
           </Accordion>
 
           <Accordion
@@ -636,6 +672,43 @@ export default function MedicalProfileScreen({ route }: Props) {
         </View>
         <PrimaryButton title="Ajouter" onPress={onAddSurgicalHistory} disabled={!procedureName.trim() || !performedYear} />
       </AddModal>
+
+      <AddModal
+        visible={vetModalVisible}
+        title="Ajouter un veterinaire"
+        onClose={() => {
+          setVetModalVisible(false);
+          setNewVetName('');
+          setNewVetPhone('');
+          setNewVetAddress('');
+        }}
+      >
+        <TextInput
+          style={styles.input}
+          placeholder="Nom du veterinaire"
+          value={newVetName}
+          onChangeText={setNewVetName}
+          autoFocus
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Telephone"
+          keyboardType="phone-pad"
+          value={newVetPhone}
+          onChangeText={setNewVetPhone}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Adresse"
+          value={newVetAddress}
+          onChangeText={setNewVetAddress}
+        />
+        <PrimaryButton
+          title={savingVet ? '...' : 'Ajouter'}
+          onPress={onAddVet}
+          disabled={savingVet || !newVetName.trim()}
+        />
+      </AddModal>
     </>
   );
 }
@@ -679,6 +752,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   noteAddButton: { paddingHorizontal: spacing.lg },
+  addVetButton: { marginTop: spacing.md },
   durationRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   durationValueInput: { flex: 1 },
   durationUnitField: { flex: 2 },
