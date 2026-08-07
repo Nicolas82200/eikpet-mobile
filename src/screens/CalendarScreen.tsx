@@ -76,6 +76,11 @@ function buildMonthCells(year: number, month: number): MonthCell[] {
   return cells;
 }
 
+/** Date a laquelle l'echeance doit apparaitre dans le calendrier : le rappel recalcule s'il existe, sinon la date prevue initiale. */
+function entryDisplayDate(entry: CalendarEntry): string {
+  return (entry.nextReminderDate ?? entry.scheduledDate).slice(0, 10);
+}
+
 function getPrecisionOptions(type: HealthEntryType | null, species: string | undefined): readonly string[] {
   if (!species) return [];
   if (type === 'vaccin') return getVaccinesForSpecies(species);
@@ -116,7 +121,7 @@ export default function CalendarScreen({ route }: Props) {
   const entriesByDate = useMemo(() => {
     const map = new Map<string, CalendarEntry[]>();
     for (const entry of entries) {
-      const iso = entry.scheduledDate.slice(0, 10);
+      const iso = entryDisplayDate(entry);
       const list = map.get(iso) ?? [];
       list.push(entry);
       map.set(iso, list);
@@ -148,7 +153,7 @@ export default function CalendarScreen({ route }: Props) {
 
   const visibleEntries = selectedDate
     ? (entriesByDate.get(selectedDate) ?? [])
-    : [...entries].sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
+    : [...entries].sort((a, b) => entryDisplayDate(a).localeCompare(entryDisplayDate(b)));
 
   const openModal = () => {
     setSelectedAnimalId(animals[0]?.id ?? null);
