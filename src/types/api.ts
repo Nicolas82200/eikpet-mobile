@@ -176,6 +176,16 @@ export interface BoardingEntry {
   price: number | null;
   periodicity: BoardingPeriodicity;
   dueDate: string;
+  /** AAAA-MM-JJ : point de depart de la recurrence ("depuis quand"), null pour 'unique'. */
+  startDate: string | null;
+  /** Jour du mois (1-31), utilise pour 'mensuel'. */
+  dayOfMonth: number | null;
+  /** Mois (1-12) de l'echeance annuelle, utilise pour 'annuel'. */
+  recurrenceMonth: number | null;
+  /** Jour du mois de l'echeance annuelle, utilise pour 'annuel'. */
+  recurrenceDay: number | null;
+  /** Jour de la semaine (0 = lundi ... 6 = dimanche), utilise pour 'hebdomadaire'. */
+  dayOfWeek: number | null;
   status: BoardingStatus;
   notes: string | null;
 }
