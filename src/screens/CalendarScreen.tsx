@@ -10,10 +10,12 @@ import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
 import Card from '../components/Card';
 import DatePickerInput from '../components/DatePickerInput';
+import Dropdown from '../components/Dropdown';
 import PrimaryButton from '../components/PrimaryButton';
+import ReminderPicker from '../components/ReminderPicker';
 import ScreenHeader from '../components/ScreenHeader';
 import TimePickerInput from '../components/TimePickerInput';
-import RecurrencePicker from '../components/RecurrencePicker';
+import { HEALTH_ENTRY_TYPES, getHealthEntryTypeLabel } from '../data/healthEntryTypes';
 import { getVaccinesForSpecies } from '../data/vaccines';
 import { getDewormersForSpecies } from '../data/dewormers';
 import { scheduleAppointmentFollowUp } from '../notifications/localReminders';
@@ -24,9 +26,7 @@ import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Calendar'>;
 
-const TYPES: HealthEntryType[] = ['vaccin', 'vermifuge', 'rdv_veto', 'osteo', 'dentiste_equin', 'marechal', 'autre'];
-
-function getPrecisionOptions(type: HealthEntryType, species: string | undefined): readonly string[] {
+function getPrecisionOptions(type: HealthEntryType | null, species: string | undefined): readonly string[] {
   if (!species) return [];
   if (type === 'vaccin') return getVaccinesForSpecies(species);
   if (type === 'vermifuge') return getDewormersForSpecies(species);
@@ -40,7 +40,7 @@ export default function CalendarScreen({ route }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
 
   const [selectedAnimalId, setSelectedAnimalId] = useState<number | null>(null);
-  const [type, setType] = useState<HealthEntryType>('vaccin');
+  const [type, setType] = useState<HealthEntryType | null>(null);
   const [customTypeLabel, setCustomTypeLabel] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
@@ -64,7 +64,7 @@ export default function CalendarScreen({ route }: Props) {
   };
 
   const onCreate = async () => {
-    if (!selectedAnimalId || !scheduledDate || !selectedAnimal) return;
+    if (!selectedAnimalId || !type || !scheduledDate || !selectedAnimal) return;
     try {
       const entry = await api.createHealthEntry(selectedAnimalId, {
         type,
@@ -78,11 +78,12 @@ export default function CalendarScreen({ route }: Props) {
           animalId: selectedAnimalId,
           animalName: selectedAnimal.name,
           entryId: entry.id,
-          entryLabel: customTypeLabel.trim() || type,
+          entryLabel: customTypeLabel.trim() || getHealthEntryTypeLabel(type),
           scheduledDate,
           scheduledTime,
         });
       }
+      setType(null);
       setCustomTypeLabel('');
       setScheduledDate('');
       setScheduledTime('');
@@ -108,7 +109,7 @@ export default function CalendarScreen({ route }: Props) {
         renderItem={({ item }) => (
           <Card>
             <Text style={styles.cardTitle}>
-              {item.animalName} — {item.customTypeLabel ?? item.type}
+              {item.animalName} — {item.customTypeLabel ?? getHealthEntryTypeLabel(item.type)}
             </Text>
             <Text style={styles.cardSubtitle}>
               {item.nextReminderDate
@@ -139,17 +140,8 @@ export default function CalendarScreen({ route }: Props) {
             </View>
 
             <Text style={styles.label}>Type</Text>
-            <View style={styles.chipRow}>
-              {TYPES.map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.chip, t === type && styles.chipActive]}
-                  onPress={() => setType(t)}
-                >
-                  <Text style={t === type ? styles.chipTextActive : styles.chipText}>{t}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Dropdown value={type} onChange={setType} options={HEALTH_ENTRY_TYPES} placeholder="Type d'entree" />
+            <View style={styles.spacer} />
 
             <AutocompleteInput
               value={customTypeLabel}
@@ -159,8 +151,8 @@ export default function CalendarScreen({ route }: Props) {
             />
             <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
             <TimePickerInput value={scheduledTime} onChange={setScheduledTime} placeholder="Heure (optionnel)" />
-            <RecurrencePicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
-            <PrimaryButton title="Ajouter" onPress={onCreate} />
+            <ReminderPicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
+            <PrimaryButton title="Ajouter" onPress={onCreate} disabled={!selectedAnimalId || !type || !scheduledDate} />
           </>
         )}
       </AddModal>
@@ -180,4 +172,5 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
   chipText: { color: colors.textPrimary },
   chipTextActive: { color: 'white', fontWeight: '600' },
+  spacer: { height: spacing.md },
 });

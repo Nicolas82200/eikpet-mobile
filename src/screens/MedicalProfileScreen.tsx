@@ -14,6 +14,7 @@ import Card from '../components/Card';
 import NullableField from '../components/NullableField';
 import DatePickerInput from '../components/DatePickerInput';
 import PrimaryButton from '../components/PrimaryButton';
+import WeightCurveSection from '../components/WeightCurveSection';
 import { scheduleTreatmentReminders, cancelTreatmentReminders } from '../notifications/localReminders';
 import { getProceduresForSpecies } from '../data/procedures';
 import { TREATMENT_TYPES } from '../data/treatmentTypes';
@@ -377,6 +378,10 @@ export default function MedicalProfileScreen({ route }: Props) {
             ))}
             {surgicalHistory.length === 0 && <Text style={styles.empty}>Aucun antecedent chirurgical</Text>}
           </Accordion>
+
+          <View style={styles.weightSection}>
+            <WeightCurveSection animalId={animalId} />
+          </View>
         </ScrollView>
       </KeyboardAvoidingScreen>
 
@@ -452,6 +457,7 @@ export default function MedicalProfileScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { padding: spacing.lg },
+  weightSection: { marginTop: spacing.lg },
   title: { ...typography.screenTitle, fontSize: 22 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
   saveStatusText: { color: colors.textMuted, fontSize: 13 },

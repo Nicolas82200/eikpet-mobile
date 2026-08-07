@@ -7,6 +7,7 @@ import * as api from '../api/endpoints';
 import type { HealthEntry } from '../types/api';
 import Card from '../components/Card';
 import ScreenHeader from '../components/ScreenHeader';
+import { getHealthEntryTypeLabel } from '../data/healthEntryTypes';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { isPlanLimitError, showLoadError } from '../utils/errorHandling';
 import { colors, spacing, typography } from '../theme/colors';
@@ -43,7 +44,7 @@ export default function ReportsScreen({ route, navigation }: Props) {
       ListHeaderComponent={<ScreenHeader title="Comptes-rendus" />}
       renderItem={({ item }) => (
         <Card>
-          <Text style={styles.cardTitle}>{item.customTypeLabel ?? item.type}</Text>
+          <Text style={styles.cardTitle}>{item.customTypeLabel ?? getHealthEntryTypeLabel(item.type)}</Text>
           <Text style={styles.cardDate}>{new Date(item.scheduledDate).toLocaleDateString('fr-FR')}</Text>
           <Text style={styles.cardReport}>{item.report}</Text>
         </Card>

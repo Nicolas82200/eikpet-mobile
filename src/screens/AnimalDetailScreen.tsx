@@ -27,6 +27,9 @@ import { cardShadow, colors, radius, spacing, typography } from '../theme/colors
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AnimalDetail'>;
 
+/** Desactive temporairement (demande produit) : reactiver en repassant a true. */
+const SEANCES_ENABLED = false;
+
 const SEX_OPTIONS: { value: AnimalSex; label: string }[] = [
   { value: 'male', label: 'Male' },
   { value: 'femelle', label: 'Femelle' },
@@ -294,15 +297,6 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
           <TouchableOpacity
             style={styles.dashboardTile}
             activeOpacity={0.85}
-            onPress={() => navigation.navigate('EmergencySheet', { animalId, animalName: animal.name })}
-          >
-            <Text style={styles.dashboardTileIcon}>🚨</Text>
-            <Text style={styles.dashboardTileTitle}>Fiche d&apos;urgence</Text>
-            <Text style={styles.dashboardTileSubtitle}>Resume a partager en urgence, toujours gratuit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.dashboardTile}
-            activeOpacity={0.85}
             onPress={() =>
               navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
             }
@@ -349,7 +343,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
             <Text style={styles.dashboardTileTitle}>Comptes-rendus</Text>
             <Text style={styles.dashboardTileSubtitle}>Historique consolide des rdv...</Text>
           </TouchableOpacity>
-          {isEquine(animal.species) && (
+          {SEANCES_ENABLED && isEquine(animal.species) && (
             <TouchableOpacity
               style={styles.dashboardTile}
               activeOpacity={0.85}
@@ -361,13 +355,13 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={styles.dashboardTile}
+            style={styles.dashboardTileWide}
             activeOpacity={0.85}
-            onPress={() => navigation.navigate('WeightCurve', { animalId, animalName: animal.name })}
+            onPress={() => navigation.navigate('EmergencySheet', { animalId, animalName: animal.name })}
           >
-            <Text style={styles.dashboardTileIcon}>⚖️</Text>
-            <Text style={styles.dashboardTileTitle}>Courbe de poids</Text>
-            <Text style={styles.dashboardTileSubtitle}>Suivi du poids dans le temps...</Text>
+            <Text style={styles.dashboardTileIcon}>🚨</Text>
+            <Text style={styles.dashboardTileTitle}>Fiche d&apos;urgence</Text>
+            <Text style={styles.dashboardTileSubtitle}>Resume a partager en urgence, toujours gratuit</Text>
           </TouchableOpacity>
         </View>
 
@@ -442,6 +436,15 @@ const styles = StyleSheet.create({
   dashboardTile: {
     flexBasis: '47%',
     flexGrow: 1,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...cardShadow,
+  },
+  dashboardTileWide: {
+    flexBasis: '100%',
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
