@@ -7,6 +7,7 @@ import * as api from '../api/endpoints';
 import type { Provider } from '../types/api';
 import { getProviderTypeLabel } from '../data/providerTypes';
 import { isPlanLimitError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ProvidersMap'>;
 
@@ -106,10 +107,10 @@ export default function ProvidersMapScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   map: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  hint: { color: '#8A7B68', textAlign: 'center' },
-  callout: { minWidth: 160, padding: 4 },
-  calloutTitle: { fontWeight: '700', color: '#3A3226' },
-  calloutSubtitle: { color: '#B8863B', fontSize: 12, textTransform: 'uppercase', marginTop: 2 },
-  calloutAddress: { color: '#8A7B68', marginTop: 4, fontSize: 12 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
+  hint: { color: colors.textSecondary, textAlign: 'center' },
+  callout: { minWidth: 160, padding: spacing.xs, borderRadius: radius.sm },
+  calloutTitle: { fontWeight: '700', color: colors.textPrimary },
+  calloutSubtitle: { color: colors.accent, fontSize: 12, textTransform: 'uppercase', marginTop: 2 },
+  calloutAddress: { color: colors.textSecondary, marginTop: spacing.xs, fontSize: 12 },
 });

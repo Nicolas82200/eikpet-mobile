@@ -1,15 +1,18 @@
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { Animal, HealthEntry } from '../types/api';
+import Card from '../components/Card';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import LoadingScreen from '../components/LoadingScreen';
+import PrimaryButton from '../components/PrimaryButton';
 import { cancelAppointmentFollowUp } from '../notifications/localReminders';
 import { showError, showLoadError } from '../utils/errorHandling';
 import { formatTime } from '../utils/formatting';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AppointmentFollowUp'>;
 
@@ -68,7 +71,7 @@ export default function AppointmentFollowUpScreen({ route, navigation }: Props) 
           </Text>
         )}
 
-        <View style={styles.section}>
+        <Card style={styles.section}>
           <Text style={styles.sectionTitle}>Compte-rendu</Text>
           <TextInput
             style={[styles.input, styles.multiline]}
@@ -84,27 +87,32 @@ export default function AppointmentFollowUpScreen({ route, navigation }: Props) 
             value={price}
             onChangeText={setPrice}
           />
-          <TouchableOpacity style={styles.button} onPress={onSaveReport} disabled={saving}>
-            <Text style={styles.buttonText}>{saving ? 'Enregistrement...' : 'Enregistrer le compte-rendu'}</Text>
-          </TouchableOpacity>
-        </View>
+          <PrimaryButton
+            title={saving ? 'Enregistrement...' : 'Enregistrer le compte-rendu'}
+            onPress={onSaveReport}
+            disabled={saving}
+            loading={saving}
+          />
+        </Card>
 
         <TouchableOpacity
-          style={styles.card}
           onPress={() => navigation.navigate('HealthEntries', { animalId, animalName: animal.name, species: animal.species })}
         >
-          <Text style={styles.cardTitle}>Prendre un nouveau rendez-vous</Text>
-          <Text style={styles.cardSubtitle}>Ouvre le carnet de sante pour ajouter une nouvelle echeance</Text>
+          <Card>
+            <Text style={styles.cardTitle}>Prendre un nouveau rendez-vous</Text>
+            <Text style={styles.cardSubtitle}>Ouvre le carnet de sante pour ajouter une nouvelle echeance</Text>
+          </Card>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.card}
           onPress={() =>
             navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species })
           }
         >
-          <Text style={styles.cardTitle}>Ajouter un traitement</Text>
-          <Text style={styles.cardSubtitle}>Medicaments donnes par le veto, avec rappels de prise</Text>
+          <Card>
+            <Text style={styles.cardTitle}>Ajouter un traitement</Text>
+            <Text style={styles.cardSubtitle}>Medicaments donnes par le veto, avec rappels de prise</Text>
+          </Card>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingScreen>
@@ -112,16 +120,21 @@ export default function AppointmentFollowUpScreen({ route, navigation }: Props) 
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 4 },
-  subtitle: { color: '#8A7B68', marginBottom: 20 },
-  section: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 10, backgroundColor: '#EFE2C4', color: '#000000' },
+  container: { padding: spacing.lg },
+  title: { ...typography.screenTitle, fontSize: 22, marginBottom: spacing.xs },
+  subtitle: { color: colors.textSecondary, marginBottom: spacing.xl },
+  section: { marginBottom: spacing.xl },
+  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: spacing.md },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
-  button: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
   cardTitle: { fontSize: 16, fontWeight: '600' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
+  cardSubtitle: { color: colors.textSecondary, marginTop: spacing.xs },
 });

@@ -1,5 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Card from '../components/Card';
+import { colors, spacing, typography } from '../theme/colors';
 
 interface Section {
   title: string;
@@ -55,7 +57,7 @@ export default function PracticalInfoScreen() {
         et evoluent : confirme toujours avec ton veterinaire avant une decision importante.
       </Text>
       {SECTIONS.map((section) => (
-        <View key={section.title} style={styles.section}>
+        <Card key={section.title}>
           <Text style={styles.sectionTitle}>{section.title}</Text>
           {section.items.map((item) => (
             <View key={item} style={styles.itemRow}>
@@ -63,19 +65,18 @@ export default function PracticalInfoScreen() {
               <Text style={styles.itemText}>{item}</Text>
             </View>
           ))}
-        </View>
+        </Card>
       ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 8 },
-  intro: { color: '#8A7B68', marginBottom: 20 },
-  section: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10, color: '#3A3226' },
-  itemRow: { flexDirection: 'row', marginBottom: 8 },
-  bullet: { color: '#B8863B', marginRight: 8, fontWeight: '700' },
-  itemText: { flex: 1, color: '#3A3226' },
+  container: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  title: { ...typography.screenTitle, fontSize: 22, marginBottom: spacing.sm },
+  intro: { color: colors.textSecondary, marginBottom: spacing.xl },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: spacing.md, color: colors.textPrimary },
+  itemRow: { flexDirection: 'row', marginBottom: spacing.sm },
+  bullet: { color: colors.accent, marginRight: spacing.sm, fontWeight: '700' },
+  itemText: { flex: 1, color: colors.textPrimary },
 });

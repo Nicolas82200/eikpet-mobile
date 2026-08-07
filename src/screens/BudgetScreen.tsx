@@ -1,12 +1,15 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { HouseholdBudget } from '../types/api';
+import Card from '../components/Card';
+import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { isPlanLimitError, showLoadError } from '../utils/errorHandling';
+import { colors, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Budget'>;
 
@@ -42,20 +45,24 @@ export default function BudgetScreen({ route, navigation }: Props) {
       keyExtractor={(item) => String(item.animalId)}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ListHeaderComponent={
-        <View style={styles.header}>
-          <Text style={styles.title}>Budget</Text>
-          <Text style={styles.totalLabel}>Total du foyer</Text>
-          <Text style={styles.totalAmount}>{formatEuros(budget?.total ?? 0)}</Text>
+        <>
+          <ScreenHeader title="Budget" />
+          <Card style={styles.totalCard}>
+            <Text style={styles.totalLabel}>Total du foyer</Text>
+            <Text style={styles.totalAmount}>{formatEuros(budget?.total ?? 0)}</Text>
+          </Card>
           <Text style={styles.subtitle}>Par animal</Text>
-        </View>
+        </>
       }
       renderItem={({ item }) => (
         <TouchableOpacity
-          style={styles.card}
           onPress={() => navigation.navigate('AnimalBudget', { animalId: item.animalId, animalName: item.animalName })}
+          activeOpacity={0.8}
         >
-          <Text style={styles.cardTitle}>{item.animalName}</Text>
-          <Text style={styles.cardAmount}>{formatEuros(item.total)}</Text>
+          <Card style={styles.card}>
+            <Text style={styles.cardTitle}>{item.animalName}</Text>
+            <Text style={styles.cardAmount}>{formatEuros(item.total)}</Text>
+          </Card>
         </TouchableOpacity>
       )}
       ListEmptyComponent={<Text style={styles.empty}>Aucune depense enregistree pour l&apos;instant</Text>}
@@ -65,22 +72,13 @@ export default function BudgetScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  header: { marginBottom: 8 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  totalLabel: { color: '#8A7B68' },
-  totalAmount: { fontSize: 32, fontWeight: 'bold', color: '#B8863B', marginBottom: 16 },
-  subtitle: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
-  card: {
-    backgroundColor: '#EDE3D0',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  content: { padding: spacing.lg },
+  totalCard: { alignItems: 'center', marginBottom: spacing.lg },
+  totalLabel: { color: colors.textSecondary },
+  totalAmount: { fontSize: 32, fontWeight: 'bold', color: colors.accent, marginTop: spacing.xs },
+  subtitle: { ...typography.sectionTitle, fontSize: 16, marginBottom: spacing.sm },
+  card: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontSize: 16, fontWeight: '600' },
-  cardAmount: { fontSize: 16, fontWeight: '700', color: '#B8863B' },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
+  cardAmount: { fontSize: 16, fontWeight: '700', color: colors.accent },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
 });

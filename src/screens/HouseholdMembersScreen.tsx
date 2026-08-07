@@ -6,8 +6,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { HouseholdMember } from '../types/api';
+import Card from '../components/Card';
+import PrimaryButton from '../components/PrimaryButton';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HouseholdMembers'>;
 
@@ -168,31 +171,32 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
             <Text style={styles.title}>{householdName}</Text>
           )}
 
-          <View style={styles.codeCard}>
+          <Card style={styles.codeCard}>
             <Text style={styles.codeLabel}>Code d&apos;invitation</Text>
             <Text style={styles.code}>{inviteCode}</Text>
             <Text style={styles.codeHint}>
               Partage ce code aux autres membres du foyer : ils pourront le saisir lors de leur inscription.
             </Text>
             <View style={styles.codeActions}>
-              <TouchableOpacity style={styles.codeButton} onPress={onCopyCode}>
-                <Text style={styles.codeButtonText}>Copier</Text>
-              </TouchableOpacity>
+              <PrimaryButton title="Copier" onPress={onCopyCode} style={styles.codeButton} />
               {isOwner && (
-                <TouchableOpacity style={styles.codeButtonSecondary} onPress={onRegenerate} disabled={regenerating}>
-                  <Text style={styles.codeButtonSecondaryText}>
-                    {regenerating ? 'Regeneration...' : 'Regenerer'}
-                  </Text>
-                </TouchableOpacity>
+                <PrimaryButton
+                  title={regenerating ? 'Regeneration...' : 'Regenerer'}
+                  onPress={onRegenerate}
+                  disabled={regenerating}
+                  loading={regenerating}
+                  variant="dangerOutline"
+                  style={styles.codeButton}
+                />
               )}
             </View>
-          </View>
+          </Card>
 
           <Text style={styles.sectionTitle}>Membres</Text>
         </>
       }
       renderItem={({ item }) => (
-        <View style={styles.card}>
+        <Card>
           <Text style={styles.cardTitle}>
             {item.firstName} {item.lastName}
           </Text>
@@ -204,7 +208,7 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
               <Text style={styles.removeLink}>Retirer du foyer</Text>
             </TouchableOpacity>
           )}
-        </View>
+        </Card>
       )}
       ListFooterComponent={
         isOwner ? (
@@ -226,42 +230,31 @@ export default function HouseholdMembersScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  renameRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  content: { padding: spacing.lg },
+  title: { ...typography.sectionTitle, fontSize: 22, marginBottom: spacing.lg },
+  renameRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   nameInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#E3D8C4',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
     fontSize: 18,
     fontWeight: 'bold',
   },
-  renameButton: { backgroundColor: '#B8863B', borderRadius: 8, paddingHorizontal: 16, justifyContent: 'center' },
+  renameButton: { backgroundColor: colors.accent, borderRadius: radius.sm, paddingHorizontal: spacing.lg, justifyContent: 'center' },
   renameButtonText: { color: 'white', fontWeight: '600' },
-  codeCard: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 20 },
-  codeLabel: { color: '#8A7B68', marginBottom: 4 },
-  code: { fontSize: 28, fontWeight: 'bold', letterSpacing: 2, marginBottom: 8 },
-  codeHint: { color: '#8A7B68', marginBottom: 12 },
-  codeActions: { flexDirection: 'row', gap: 8 },
-  codeButton: { backgroundColor: '#B8863B', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16, flex: 1 },
-  codeButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  codeButtonSecondary: {
-    borderWidth: 1,
-    borderColor: '#B3452C',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    flex: 1,
-  },
-  codeButtonSecondaryText: { color: '#B3452C', textAlign: 'center', fontWeight: '600' },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
+  codeCard: { marginBottom: spacing.xl },
+  codeLabel: { color: colors.textSecondary, marginBottom: spacing.xs },
+  code: { fontSize: 28, fontWeight: 'bold', letterSpacing: 2, marginBottom: spacing.sm },
+  codeHint: { color: colors.textSecondary, marginBottom: spacing.md },
+  codeActions: { flexDirection: 'row', gap: spacing.sm },
+  codeButton: { flex: 1 },
+  sectionTitle: { ...typography.sectionTitle, fontSize: 18, marginBottom: spacing.sm },
   cardTitle: { fontSize: 16, fontWeight: '600' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  removeLink: { color: '#B3452C', fontWeight: '600', marginTop: 8 },
-  leaveButton: { padding: 12, marginTop: 8, marginBottom: 24 },
-  leaveButtonText: { color: '#B3452C', textAlign: 'center', fontWeight: '600' },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
+  cardSubtitle: { color: colors.textSecondary, marginTop: spacing.xs },
+  removeLink: { color: colors.danger, fontWeight: '600', marginTop: spacing.sm },
+  leaveButton: { padding: spacing.md, marginTop: spacing.sm, marginBottom: spacing.lg },
+  leaveButtonText: { color: colors.danger, textAlign: 'center', fontWeight: '600' },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
 });

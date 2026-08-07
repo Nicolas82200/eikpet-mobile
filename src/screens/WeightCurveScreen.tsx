@@ -8,8 +8,12 @@ import type { WeightEntry } from '../types/api';
 import DatePickerInput from '../components/DatePickerInput';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import Card from '../components/Card';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'WeightCurve'>;
 
@@ -102,13 +106,10 @@ export default function WeightCurveScreen({ route, navigation }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>Courbe de poids</Text>
-              <AddIconButton onPress={() => setModalVisible(true)} />
-            </View>
+            <ScreenHeader title="Courbe de poids" action={<AddIconButton onPress={() => setModalVisible(true)} />} />
 
             {entries.length > 1 && (
-              <View style={styles.chartCard}>
+              <Card style={styles.chartCard}>
                 <ScrollView horizontal contentContainerStyle={styles.chartRow}>
                   {entries.map((entry) => {
                     const ratio = (entry.weightKg - minWeight) / range;
@@ -124,19 +125,19 @@ export default function WeightCurveScreen({ route, navigation }: Props) {
                     );
                   })}
                 </ScrollView>
-              </View>
+              </Card>
             )}
           </>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Card>
             <Text style={styles.cardTitle}>{item.weightKg} kg</Text>
             <Text style={styles.cardSubtitle}>{formatDate(item.recordedDate)}</Text>
             {item.notes ? <Text style={styles.cardNotes}>{item.notes}</Text> : null}
             <TouchableOpacity onPress={() => onDelete(item)}>
               <Text style={styles.deleteLink}>Supprimer</Text>
             </TouchableOpacity>
-          </View>
+          </Card>
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucune pesee enregistree pour l&apos;instant</Text>}
       />
@@ -164,13 +165,12 @@ export default function WeightCurveScreen({ route, navigation }: Props) {
         <Text style={styles.label}>Notes (optionnel)</Text>
         <TextInput style={styles.input} placeholder="Notes" value={notes} onChangeText={setNotes} />
 
-        <TouchableOpacity
-          style={styles.submitButton}
+        <PrimaryButton
+          title={submitting ? 'Enregistrement...' : 'Ajouter'}
           onPress={onCreate}
           disabled={submitting || !recordedDate || !weightKg.trim()}
-        >
-          <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Ajouter'}</Text>
-        </TouchableOpacity>
+          loading={submitting}
+        />
       </AddModal>
     </>
   );
@@ -178,38 +178,27 @@ export default function WeightCurveScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  chartCard: {
-    backgroundColor: '#EDE3D0',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    marginBottom: 16,
-  },
-  chartRow: { alignItems: 'flex-end', paddingHorizontal: 8 },
-  barColumn: { width: BAR_WIDTH, alignItems: 'center', marginHorizontal: 6 },
-  barValue: { fontSize: 11, color: '#3A3226', marginBottom: 4, fontWeight: '600' },
+  content: { padding: spacing.lg },
+  chartCard: { paddingVertical: spacing.md, paddingHorizontal: spacing.sm },
+  chartRow: { alignItems: 'flex-end', paddingHorizontal: spacing.sm },
+  barColumn: { width: BAR_WIDTH, alignItems: 'center', marginHorizontal: spacing.sm },
+  barValue: { fontSize: 11, color: colors.textPrimary, marginBottom: spacing.xs, fontWeight: '600' },
   barTrack: { height: CHART_HEIGHT, justifyContent: 'flex-end' },
-  bar: { width: 14, backgroundColor: '#B8863B', borderRadius: 7 },
-  barLabel: { fontSize: 10, color: '#8A7B68', marginTop: 6, textAlign: 'center' },
-  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '600' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  cardNotes: { color: '#3A3226', marginTop: 6 },
-  deleteLink: { color: '#B3452C', fontWeight: '600', marginTop: 8 },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  label: { color: '#8A7B68', marginBottom: 8, marginTop: 4 },
+  bar: { width: 14, backgroundColor: colors.accent, borderRadius: 7 },
+  barLabel: { fontSize: 10, color: colors.textSecondary, marginTop: spacing.xs, textAlign: 'center' },
+  cardTitle: { ...typography.sectionTitle, fontSize: 16 },
+  cardSubtitle: { ...typography.caption, marginTop: spacing.xs },
+  cardNotes: { color: colors.textPrimary, marginTop: spacing.sm },
+  deleteLink: { color: colors.danger, fontWeight: '600', marginTop: spacing.sm },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  label: { color: colors.textSecondary, marginBottom: spacing.sm, marginTop: spacing.xs },
   input: {
     borderWidth: 1,
-    borderColor: '#E3D8C4',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#EFE2C4',
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.fieldBackground,
     color: '#000000',
   },
-  submitButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 8 },
-  submitButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });

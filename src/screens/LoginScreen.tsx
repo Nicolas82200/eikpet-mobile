@@ -5,6 +5,8 @@ import type { AuthStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
+import PrimaryButton from '../components/PrimaryButton';
+import { colors, radius, spacing } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -31,6 +33,7 @@ export default function LoginScreen({ navigation }: Props) {
     <KeyboardAvoidingScreen>
       <View style={styles.container}>
       <Text style={styles.title}>EikPet</Text>
+      <Text style={styles.subtitle}>La santé de tes animaux, centralisée</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -47,9 +50,13 @@ export default function LoginScreen({ navigation }: Props) {
         onChangeText={setPassword}
       />
       {error && <Text style={styles.error}>{error}</Text>}
-      <TouchableOpacity style={styles.button} onPress={onSubmit} disabled={submitting}>
-        <Text style={styles.buttonText}>{submitting ? 'Connexion...' : 'Se connecter'}</Text>
-      </TouchableOpacity>
+      <PrimaryButton
+        title={submitting ? 'Connexion...' : 'Se connecter'}
+        onPress={onSubmit}
+        disabled={submitting}
+        loading={submitting}
+        style={styles.button}
+      />
       <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
         <Text style={styles.link}>Mot de passe oublie ?</Text>
       </TouchableOpacity>
@@ -62,11 +69,19 @@ export default function LoginScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24 },
-  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 32 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
-  button: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 8 },
-  buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  link: { textAlign: 'center', marginTop: 16, color: '#B8863B' },
-  error: { color: 'red', marginBottom: 8, textAlign: 'center' },
+  container: { flex: 1, justifyContent: 'center', padding: spacing.xl },
+  title: { fontSize: 34, fontWeight: 'bold', textAlign: 'center', color: colors.accent },
+  subtitle: { textAlign: 'center', color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.xxl },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  button: { marginTop: spacing.xs },
+  link: { textAlign: 'center', marginTop: spacing.lg, color: colors.accent },
+  error: { color: colors.danger, marginBottom: spacing.sm, textAlign: 'center' },
 });

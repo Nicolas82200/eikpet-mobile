@@ -5,8 +5,10 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { AnimalBudget } from '../types/api';
+import Card from '../components/Card';
 import LoadingScreen from '../components/LoadingScreen';
 import { isPlanLimitError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AnimalBudget'>;
 
@@ -51,11 +53,13 @@ export default function AnimalBudgetScreen({ route, navigation }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{animalName}</Text>
-      <Text style={styles.totalLabel}>Total</Text>
-      <Text style={styles.totalAmount}>{formatEuros(budget.total)}</Text>
+      <Card style={styles.totalCard}>
+        <Text style={styles.totalLabel}>Total</Text>
+        <Text style={styles.totalAmount}>{formatEuros(budget.total)}</Text>
+      </Card>
 
       {summary.length > 0 && (
-        <View style={styles.section}>
+        <Card>
           <Text style={styles.sectionTitle}>Repartition</Text>
           {summary.map((s) => (
             <View key={s.label} style={styles.summaryRow}>
@@ -63,10 +67,10 @@ export default function AnimalBudgetScreen({ route, navigation }: Props) {
               <Text style={styles.lineAmount}>{formatEuros(s.total)}</Text>
             </View>
           ))}
-        </View>
+        </Card>
       )}
 
-      <View style={styles.section}>
+      <Card>
         <Text style={styles.sectionTitle}>Depenses de sante par categorie</Text>
         {budget.byCategory.length === 0 && <Text style={styles.emptyHint}>Aucune depense de sante enregistree.</Text>}
         {budget.byCategory.map((c) => (
@@ -80,24 +84,24 @@ export default function AnimalBudgetScreen({ route, navigation }: Props) {
             </View>
           </View>
         ))}
-      </View>
+      </Card>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
-  totalLabel: { color: '#8A7B68', textAlign: 'center', marginTop: 8 },
-  totalAmount: { fontSize: 32, fontWeight: 'bold', color: '#B8863B', textAlign: 'center', marginBottom: 16 },
-  section: { backgroundColor: '#EDE3D0', borderRadius: 12, padding: 16, marginBottom: 12 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#3A3226', marginBottom: 8 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  line: { color: '#3A3226', textTransform: 'capitalize' },
-  lineAmount: { color: '#3A3226', fontWeight: '600' },
-  emptyHint: { color: '#8A7B68' },
-  categoryRow: { marginBottom: 10 },
-  categoryLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  barTrack: { height: 8, borderRadius: 4, backgroundColor: '#EFE2C4', overflow: 'hidden' },
-  bar: { height: 8, borderRadius: 4, backgroundColor: '#B8863B' },
+  container: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  title: { ...typography.screenTitle, textAlign: 'center', marginBottom: spacing.lg },
+  totalCard: { alignItems: 'center' },
+  totalLabel: { color: colors.textSecondary },
+  totalAmount: { fontSize: 32, fontWeight: 'bold', color: colors.accent, marginTop: spacing.xs },
+  sectionTitle: { ...typography.sectionTitle, fontSize: 15 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs, marginTop: spacing.sm },
+  line: { color: colors.textPrimary, textTransform: 'capitalize' },
+  lineAmount: { color: colors.textPrimary, fontWeight: '600' },
+  emptyHint: { color: colors.textSecondary, marginTop: spacing.sm },
+  categoryRow: { marginTop: spacing.sm, marginBottom: 2 },
+  categoryLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
+  barTrack: { height: 8, borderRadius: radius.sm / 2, backgroundColor: colors.fieldBackground, overflow: 'hidden' },
+  bar: { height: 8, borderRadius: radius.sm / 2, backgroundColor: colors.accent },
 });

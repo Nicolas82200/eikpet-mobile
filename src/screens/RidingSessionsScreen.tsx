@@ -9,8 +9,12 @@ import { RIDING_SESSION_TYPES, getRidingSessionTypeLabel } from '../data/ridingS
 import DatePickerInput from '../components/DatePickerInput';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import Card from '../components/Card';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'RidingSessions'>;
 
@@ -120,6 +124,52 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
     ]);
   };
 
+  const renderForm = (onSubmit: () => void, submitLabel: string, withReport: boolean) => (
+    <>
+      <Text style={styles.label}>Type</Text>
+      <View style={styles.chipRow}>
+        {RIDING_SESSION_TYPES.map((t) => (
+          <TouchableOpacity
+            key={t.value}
+            style={[styles.chip, type === t.value && styles.chipActive]}
+            onPress={() => setType(t.value)}
+          >
+            <Text style={type === t.value ? styles.chipTextActive : styles.chipText}>{t.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Date</Text>
+      <DatePickerInput value={scheduledDate} onChange={setScheduledDate} />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Prix (€)"
+        keyboardType="decimal-pad"
+        value={price}
+        onChangeText={setPrice}
+      />
+
+      {withReport && (
+        <TextInput
+          style={[styles.input, styles.multiline]}
+          placeholder="Compte-rendu (optionnel)"
+          value={report}
+          onChangeText={setReport}
+          multiline
+        />
+      )}
+
+      <PrimaryButton
+        title={submitting ? 'Enregistrement...' : submitLabel}
+        onPress={onSubmit}
+        disabled={submitting || !scheduledDate}
+        loading={submitting}
+        style={styles.submitButton}
+      />
+    </>
+  );
+
   return (
     <>
       <FlatList
@@ -128,14 +178,9 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
         data={sessions}
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListHeaderComponent={
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>Seances</Text>
-            <AddIconButton onPress={() => setModalVisible(true)} />
-          </View>
-        }
+        ListHeaderComponent={<ScreenHeader title="Seances" action={<AddIconButton onPress={() => setModalVisible(true)} />} />}
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Card>
             <Text style={styles.cardTitle}>{getRidingSessionTypeLabel(item.type)}</Text>
             <Text style={styles.cardSubtitle}>
               {new Date(item.scheduledDate).toLocaleDateString('fr-FR')}
@@ -155,7 +200,7 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
                 <Text style={styles.deleteLink}>Supprimer</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </Card>
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucune seance pour l&apos;instant</Text>}
       />
@@ -168,33 +213,7 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
           resetForm();
         }}
       >
-        <Text style={styles.label}>Type</Text>
-        <View style={styles.chipRow}>
-          {RIDING_SESSION_TYPES.map((t) => (
-            <TouchableOpacity
-              key={t.value}
-              style={[styles.chip, type === t.value && styles.chipActive]}
-              onPress={() => setType(t.value)}
-            >
-              <Text style={type === t.value ? styles.chipTextActive : styles.chipText}>{t.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Date</Text>
-        <DatePickerInput value={scheduledDate} onChange={setScheduledDate} />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Prix (€)"
-          keyboardType="decimal-pad"
-          value={price}
-          onChangeText={setPrice}
-        />
-
-        <TouchableOpacity style={styles.submitButton} onPress={onCreate} disabled={submitting || !scheduledDate}>
-          <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Ajouter'}</Text>
-        </TouchableOpacity>
+        {renderForm(onCreate, 'Ajouter', false)}
       </AddModal>
 
       <AddModal
@@ -205,41 +224,7 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
           resetForm();
         }}
       >
-        <Text style={styles.label}>Type</Text>
-        <View style={styles.chipRow}>
-          {RIDING_SESSION_TYPES.map((t) => (
-            <TouchableOpacity
-              key={t.value}
-              style={[styles.chip, type === t.value && styles.chipActive]}
-              onPress={() => setType(t.value)}
-            >
-              <Text style={type === t.value ? styles.chipTextActive : styles.chipText}>{t.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Date</Text>
-        <DatePickerInput value={scheduledDate} onChange={setScheduledDate} />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Prix (€)"
-          keyboardType="decimal-pad"
-          value={price}
-          onChangeText={setPrice}
-        />
-
-        <TextInput
-          style={[styles.input, styles.multiline]}
-          placeholder="Compte-rendu (optionnel)"
-          value={report}
-          onChangeText={setReport}
-          multiline
-        />
-
-        <TouchableOpacity style={styles.submitButton} onPress={onSaveEdit} disabled={submitting || !scheduledDate}>
-          <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</Text>
-        </TouchableOpacity>
+        {renderForm(onSaveEdit, 'Enregistrer', true)}
       </AddModal>
     </>
   );
@@ -247,27 +232,32 @@ export default function RidingSessionsScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '600' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  cardReport: { color: '#3A3226', marginTop: 8 },
-  cardActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  statusDone: { color: '#2E7D32', fontWeight: '600' },
-  statusPlanned: { color: '#B8863B', fontWeight: '600' },
-  editLink: { color: '#B8863B', fontWeight: '600' },
-  deleteLink: { color: '#B3452C', fontWeight: '600' },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  label: { color: '#8A7B68', marginBottom: 8, marginTop: 4 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  chipText: { color: '#3A3226' },
+  content: { padding: spacing.lg },
+  cardTitle: { ...typography.sectionTitle, fontSize: 16 },
+  cardSubtitle: { ...typography.caption, marginTop: spacing.xs },
+  cardReport: { color: colors.textPrimary, marginTop: spacing.sm },
+  cardActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm },
+  statusDone: { color: colors.success, fontWeight: '600' },
+  statusPlanned: { color: colors.accent, fontWeight: '600' },
+  editLink: { color: colors.accent, fontWeight: '600' },
+  deleteLink: { color: colors.danger, fontWeight: '600' },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  label: { color: colors.textSecondary, marginBottom: spacing.sm, marginTop: spacing.xs },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { color: colors.textPrimary },
   chipTextActive: { color: 'white', fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, marginTop: 12, backgroundColor: '#EFE2C4', color: '#000000' },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    marginTop: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
-  submitButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 8 },
-  submitButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
+  submitButton: { marginTop: spacing.sm },
 });

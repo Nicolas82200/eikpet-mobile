@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import Card from '../components/Card';
+import PrimaryButton from '../components/PrimaryButton';
 import { usePremium } from '../subscriptions/PurchasesContext';
 import { showError } from '../utils/errorHandling';
 import type { AppStackParamList } from '../navigation/types';
+import { colors, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Paywall'>;
 
@@ -42,11 +45,14 @@ export default function PaywallScreen({ navigation }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Passe a l&apos;abonnement EikPet</Text>
-      {BENEFITS.map((benefit) => (
-        <Text key={benefit} style={styles.benefit}>
-          - {benefit}
-        </Text>
-      ))}
+
+      <Card>
+        {BENEFITS.map((benefit) => (
+          <Text key={benefit} style={styles.benefit}>
+            ✓ {benefit}
+          </Text>
+        ))}
+      </Card>
 
       {!isAvailable ? (
         <Text style={styles.hint}>
@@ -54,41 +60,37 @@ export default function PaywallScreen({ navigation }: Props) {
           pour tester l&apos;abonnement.
         </Text>
       ) : isLoading ? (
-        <ActivityIndicator style={styles.loader} />
+        <ActivityIndicator style={styles.loader} color={colors.accent} />
       ) : offering ? (
         offering.availablePackages.map((pkg) => (
-          <TouchableOpacity
+          <PrimaryButton
             key={pkg.identifier}
-            style={styles.button}
-            disabled={purchasing !== null}
+            title={
+              purchasing === pkg.identifier ? 'Achat en cours...' : `${pkg.product.title} — ${pkg.product.priceString}`
+            }
             onPress={() => onPurchase(pkg.identifier)}
-          >
-            <Text style={styles.buttonText}>
-              {purchasing === pkg.identifier ? 'Achat en cours...' : `${pkg.product.title} — ${pkg.product.priceString}`}
-            </Text>
-          </TouchableOpacity>
+            disabled={purchasing !== null}
+            loading={purchasing === pkg.identifier}
+            style={styles.packageButton}
+          />
         ))
       ) : (
         <Text style={styles.hint}>Les offres ne sont pas disponibles pour le moment.</Text>
       )}
 
       {isAvailable && (
-        <TouchableOpacity style={styles.restoreButton} onPress={onRestore}>
-          <Text style={styles.restoreButtonText}>Restaurer mes achats</Text>
-        </TouchableOpacity>
+        <PrimaryButton title="Restaurer mes achats" onPress={onRestore} variant="outline" style={styles.restoreButton} />
       )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  benefit: { fontSize: 15, marginBottom: 8, color: '#4A4136' },
-  loader: { marginTop: 24 },
-  hint: { color: '#8A7B68', marginTop: 16 },
-  button: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14, marginTop: 16 },
-  buttonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  restoreButton: { marginTop: 24, padding: 12 },
-  restoreButtonText: { color: '#B8863B', textAlign: 'center', fontWeight: '600' },
+  container: { padding: spacing.xl },
+  title: { ...typography.screenTitle, marginBottom: spacing.lg },
+  benefit: { fontSize: 15, marginBottom: spacing.sm, color: colors.textPrimary },
+  loader: { marginTop: spacing.xl },
+  hint: { color: colors.textSecondary, marginTop: spacing.lg },
+  packageButton: { marginTop: spacing.lg },
+  restoreButton: { marginTop: spacing.xl },
 });

@@ -8,7 +8,10 @@ import type { HealthEntry, HealthEntryType, VaccinationScheduleStep } from '../t
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
+import Card from '../components/Card';
 import DatePickerInput from '../components/DatePickerInput';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenHeader from '../components/ScreenHeader';
 import TimePickerInput from '../components/TimePickerInput';
 import RecurrencePicker from '../components/RecurrencePicker';
 import { getVaccinesForSpecies } from '../data/vaccines';
@@ -17,6 +20,7 @@ import { scheduleAppointmentFollowUp, cancelAppointmentFollowUp } from '../notif
 import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
 import { formatTime } from '../utils/formatting';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
 
@@ -161,12 +165,12 @@ export default function HealthEntriesScreen({ route }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>Carnet de sante — {animalName}</Text>
-              <AddIconButton onPress={() => setModalVisible(true)} />
-            </View>
+            <ScreenHeader
+              title={`Carnet de sante — ${animalName}`}
+              action={<AddIconButton onPress={() => setModalVisible(true)} />}
+            />
             {vaccinationSchedule.length > 0 && (
-              <View style={styles.scheduleCard}>
+              <Card style={styles.scheduleCard}>
                 <Text style={styles.scheduleTitle}>Protocole de primo-vaccination suggere</Text>
                 <Text style={styles.scheduleSubtitle}>
                   A adapter avec ton veterinaire selon l&apos;etat des anticorps maternels.
@@ -182,12 +186,12 @@ export default function HealthEntriesScreen({ route }: Props) {
                     </TouchableOpacity>
                   </View>
                 ))}
-              </View>
+              </Card>
             )}
           </>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Card>
             <Text style={styles.cardTitle}>{item.customTypeLabel ?? item.type}</Text>
             <Text style={styles.cardSubtitle}>
               {item.scheduledDate}
@@ -209,7 +213,7 @@ export default function HealthEntriesScreen({ route }: Props) {
                 <Text style={styles.cardActionTextDanger}>Supprimer</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </Card>
         )}
         ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l&apos;instant</Text>}
       />
@@ -248,9 +252,7 @@ export default function HealthEntriesScreen({ route }: Props) {
           onChangeText={setCreatePrice}
         />
 
-        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-          <Text style={styles.addButtonText}>Ajouter</Text>
-        </TouchableOpacity>
+        <PrimaryButton title="Ajouter" onPress={onCreate} />
       </AddModal>
 
       <AddModal visible={!!reportEntry} title="Compte-rendu" onClose={() => setReportEntry(null)}>
@@ -269,9 +271,12 @@ export default function HealthEntriesScreen({ route }: Props) {
           value={price}
           onChangeText={setPrice}
         />
-        <TouchableOpacity style={styles.addButton} onPress={onSaveReport} disabled={savingReport}>
-          <Text style={styles.addButtonText}>{savingReport ? 'Enregistrement...' : 'Enregistrer'}</Text>
-        </TouchableOpacity>
+        <PrimaryButton
+          title={savingReport ? 'Enregistrement...' : 'Enregistrer'}
+          onPress={onSaveReport}
+          disabled={savingReport}
+          loading={savingReport}
+        />
       </AddModal>
     </>
   );
@@ -279,41 +284,44 @@ export default function HealthEntriesScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', flexShrink: 1, marginRight: 12 },
-  scheduleCard: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 16 },
-  scheduleTitle: { fontSize: 15, fontWeight: '700', color: '#3A3226' },
-  scheduleSubtitle: { color: '#8A7B68', marginTop: 4, marginBottom: 10, fontSize: 12 },
+  content: { padding: spacing.lg },
+  scheduleCard: {},
+  scheduleTitle: { ...typography.sectionTitle, fontSize: 15 },
+  scheduleSubtitle: { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: 10, fontSize: 12 },
   scheduleStep: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#E3D8C4',
+    borderTopColor: colors.border,
   },
-  scheduleStepText: { flexShrink: 1, marginRight: 12 },
-  scheduleStepLabel: { color: '#3A3226', fontWeight: '600' },
-  scheduleStepDate: { color: '#8A7B68', marginTop: 2, fontSize: 12 },
-  scheduleStepAdd: { color: '#B8863B', fontWeight: '600' },
-  card: { backgroundColor: '#EDE3D0', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '600', textTransform: 'capitalize' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  cardReport: { color: '#3A3226', marginTop: 6, fontStyle: 'italic' },
-  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 10 },
-  cardActionText: { color: '#B8863B', fontWeight: '600' },
-  cardActionTextDanger: { color: '#B3452C', fontWeight: '600' },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  typeChip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  typeChipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  typeChipText: { color: '#3A3226' },
+  scheduleStepText: { flexShrink: 1, marginRight: spacing.md },
+  scheduleStepLabel: { color: colors.textPrimary, fontWeight: '600' },
+  scheduleStepDate: { color: colors.textSecondary, marginTop: 2, fontSize: 12 },
+  scheduleStepAdd: { color: colors.accent, fontWeight: '600' },
+  cardTitle: { ...typography.sectionTitle, fontSize: 16, textTransform: 'capitalize' },
+  cardSubtitle: { ...typography.caption, marginTop: spacing.xs },
+  cardReport: { color: colors.textPrimary, marginTop: spacing.sm, fontStyle: 'italic' },
+  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg, marginTop: spacing.md },
+  cardActionText: { color: colors.accent, fontWeight: '600' },
+  cardActionTextDanger: { color: colors.danger, fontWeight: '600' },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  typeChip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
+  typeChipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  typeChipText: { color: colors.textPrimary },
   typeChipTextActive: { color: 'white' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
-  label: { color: '#8A7B68' },
-  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  label: { color: colors.textSecondary },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
-  addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });
