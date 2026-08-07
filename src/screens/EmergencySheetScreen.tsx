@@ -2,6 +2,8 @@ import React, { useCallback, useState } from 'react';
 import { Alert, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { EmergencySheet, EmergencyShareLink } from '../types/api';
@@ -63,6 +65,100 @@ function buildShareText(sheet: EmergencySheet): string {
   return lines.join('\n');
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function buildEmergencySheetHtml(sheet: EmergencySheet): string {
+  const { animal, medicalProfile, treatments, providers, behavioralNotes } = sheet;
+
+  const line = (label: string, value: string | null | undefined) =>
+    value ? `<p><strong>${escapeHtml(label)} :</strong> ${escapeHtml(value)}</p>` : '';
+
+  const medicalHtml = medicalProfile
+    ? [
+        line('Maladies chroniques', medicalProfile.chronicConditions),
+        line('Allergies', medicalProfile.allergies),
+        line('Regime particulier', medicalProfile.dietaryNeeds),
+        line('Groupe sanguin', medicalProfile.bloodType),
+        line('Assurance', medicalProfile.insuranceProvider),
+        line(
+          'Veto referent',
+          medicalProfile.referringVetName
+            ? `${medicalProfile.referringVetName}${medicalProfile.referringVetPhone ? ` — ${medicalProfile.referringVetPhone}` : ''}`
+            : null,
+        ),
+      ].join('')
+    : '<p>Aucune information renseignee.</p>';
+
+  const notesHtml =
+    behavioralNotes.length > 0
+      ? `<ul>${behavioralNotes.map((n) => `<li>${escapeHtml(n.note)}</li>`).join('')}</ul>`
+      : '<p>Aucune note comportementale.</p>';
+
+  const treatmentsHtml =
+    treatments.length > 0
+      ? `<ul>${treatments
+          .map(
+            (t) =>
+              `<li>${escapeHtml(t.name)}${t.dosage ? ` — ${escapeHtml(t.dosage)}` : ''}${t.frequency ? ` (${escapeHtml(t.frequency)})` : ''}</li>`,
+          )
+          .join('')}</ul>`
+      : '<p>Aucun traitement en cours.</p>';
+
+  const providersHtml =
+    providers.length > 0
+      ? `<ul>${providers
+          .map(
+            (p) =>
+              `<li>${escapeHtml(getProviderTypeLabel(p.type))} : ${escapeHtml(p.name)}${p.phone ? ` — ${escapeHtml(p.phone)}` : ''}</li>`,
+          )
+          .join('')}</ul>`
+      : '<p>Aucun intervenant associe.</p>';
+
+  return `
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          body { font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 24px; color: #1f2937; }
+          h1 { font-size: 22px; margin-bottom: 4px; }
+          h2 { font-size: 16px; margin-top: 24px; margin-bottom: 8px; border-bottom: 1px solid #d1d5db; padding-bottom: 4px; }
+          p, li { font-size: 13px; line-height: 1.5; }
+          .subtitle { color: #6b7280; margin-top: 0; }
+        </style>
+      </head>
+      <body>
+        <h1>Fiche d'urgence — ${escapeHtml(animal.name)}</h1>
+        <p class="subtitle">
+          ${escapeHtml(animal.species)}${animal.breed ? ` — ${escapeHtml(animal.breed)}` : ''}
+          ${animal.age ? ` — ${animal.age.years} an(s) ${animal.age.months} mois` : ''}
+        </p>
+
+        <h2>Identite</h2>
+        ${line('Poids', animal.currentWeightKg != null ? `${animal.currentWeightKg} kg` : null)}
+        ${line('Puce / tatouage', animal.microchipNumber)}
+        ${line('Robe / couleur', animal.color)}
+
+        <h2>Fiche medicale</h2>
+        ${medicalHtml}
+
+        <h2>Notes comportementales</h2>
+        ${notesHtml}
+
+        <h2>Traitements en cours</h2>
+        ${treatmentsHtml}
+
+        <h2>Intervenants</h2>
+        ${providersHtml}
+      </body>
+    </html>
+  `;
+}
+
 function formatDateTime(value: string): string {
   return new Date(value).toLocaleString('fr-FR');
 }
@@ -72,6 +168,7 @@ export default function EmergencySheetScreen({ route }: Props) {
   const [sheet, setSheet] = useState<EmergencySheet | null>(null);
   const [shareLinks, setShareLinks] = useState<EmergencyShareLink[]>([]);
   const [creatingLink, setCreatingLink] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const load = useCallback(() => {
     api.getEmergencySheet(animalId).then(setSheet).catch(showLoadError);
@@ -98,6 +195,21 @@ export default function EmergencySheetScreen({ route }: Props) {
       showError(error);
     } finally {
       setCreatingLink(false);
+    }
+  };
+
+  const onExportPdf = async () => {
+    if (!sheet) return;
+    setExportingPdf(true);
+    try {
+      const { uri } = await Print.printToFileAsync({ html: buildEmergencySheetHtml(sheet) });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Fiche d'urgence — ${sheet.animal.name}` });
+      }
+    } catch (error) {
+      showError(error);
+    } finally {
+      setExportingPdf(false);
     }
   };
 
@@ -224,6 +336,14 @@ export default function EmergencySheetScreen({ route }: Props) {
       </Card>
 
       <PrimaryButton title="Partager la fiche d'urgence" onPress={onShare} style={styles.shareButton} />
+      <PrimaryButton
+        title={exportingPdf ? 'Generation du PDF...' : 'Telecharger / partager en PDF'}
+        onPress={onExportPdf}
+        disabled={exportingPdf}
+        loading={exportingPdf}
+        variant="outline"
+        style={styles.shareButton}
+      />
     </ScrollView>
   );
 }
