@@ -1,24 +1,19 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
-import type { Animal, AnimalSex, HealthEntry, MedicalProfile, Provider } from '../types/api';
+import type { Animal, HealthEntry, MedicalProfile, Provider } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import Accordion from '../components/Accordion';
-import AutocompleteInput from '../components/AutocompleteInput';
 import Card from '../components/Card';
-import DatePickerInput from '../components/DatePickerInput';
 import AuthenticatedImage from '../components/AuthenticatedImage';
 import LoadingScreen from '../components/LoadingScreen';
-import PrimaryButton from '../components/PrimaryButton';
 import WarningBanner from '../components/WarningBanner';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
-import { getBreedsForSpecies } from '../data/breeds';
-import { getColorsForSpecies } from '../data/colors';
 import { getProviderTypeLabel } from '../data/providerTypes';
 import { getAnimalWarnings } from '../utils/animalWarnings';
 import { showError, showLoadError } from '../utils/errorHandling';
@@ -30,17 +25,9 @@ type Props = NativeStackScreenProps<AppStackParamList, 'AnimalDetail'>;
 /** Desactive temporairement (demande produit) : reactiver en repassant a true. */
 const SEANCES_ENABLED = false;
 
-const SEX_OPTIONS: { value: AnimalSex; label: string }[] = [
-  { value: 'male', label: 'Male' },
-  { value: 'femelle', label: 'Femelle' },
-  { value: 'inconnu', label: 'Inconnu' },
-];
-
 export default function AnimalDetailScreen({ route, navigation }: Props) {
   const { animalId, householdId } = route.params;
   const [animal, setAnimal] = useState<Animal | null>(null);
-  const [form, setForm] = useState<Partial<Animal>>({});
-  const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [medicalProfile, setMedicalProfile] = useState<Partial<MedicalProfile> | null>(null);
   const [healthEntries, setHealthEntries] = useState<HealthEntry[]>([]);
@@ -49,13 +36,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
   const [providerPickerVisible, setProviderPickerVisible] = useState(false);
 
   const load = useCallback(() => {
-    api
-      .getAnimal(animalId)
-      .then((a) => {
-        setAnimal(a);
-        setForm(a);
-      })
-      .catch(showLoadError);
+    api.getAnimal(animalId).then(setAnimal).catch(showLoadError);
     api.getMedicalProfile(animalId).then(setMedicalProfile).catch(() => setMedicalProfile(null));
     api.listHealthEntries(animalId).then(setHealthEntries).catch(() => setHealthEntries([]));
     api.listAnimalProviders(animalId).then(setLinkedProviders).catch(() => setLinkedProviders([]));
@@ -63,28 +44,6 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
   }, [animalId, householdId]);
 
   useFocusEffect(load);
-
-  const onSave = async () => {
-    setSaving(true);
-    try {
-      const updated = await api.updateAnimal(animalId, {
-        name: form.name,
-        breed: form.breed,
-        color: form.color,
-        sex: form.sex,
-        birthDate: form.birthDate,
-        sterilized: form.sterilized,
-        microchipNumber: form.microchipNumber,
-        currentWeightKg: form.currentWeightKg,
-      });
-      setAnimal(updated);
-      navigation.setOptions({ title: updated.name });
-    } catch (error) {
-      showError(error);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const onPickPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -203,77 +162,6 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
             navigation.navigate('MedicalProfile', { animalId, animalName: animal.name, species: animal.species, householdId })
           }
         />
-
-        <Accordion title="Profil" subtitle="Race, robe, sexe, naissance, puce, poids...">
-          <Text style={styles.label}>Nom</Text>
-          <TextInput style={styles.input} value={form.name ?? ''} onChangeText={(v) => setForm((f) => ({ ...f, name: v }))} />
-
-          <Text style={styles.label}>Race</Text>
-          <AutocompleteInput
-            value={form.breed ?? ''}
-            onChange={(v) => setForm((f) => ({ ...f, breed: v }))}
-            options={getBreedsForSpecies(animal.species)}
-            placeholder="Taper pour rechercher une race"
-          />
-
-          <Text style={styles.label}>Robe / couleur</Text>
-          <AutocompleteInput
-            value={form.color ?? ''}
-            onChange={(v) => setForm((f) => ({ ...f, color: v }))}
-            options={getColorsForSpecies(animal.species)}
-            placeholder="Taper pour rechercher une robe / couleur"
-          />
-
-          <Text style={styles.label}>Sexe</Text>
-          <View style={styles.chipRow}>
-            {SEX_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt.value}
-                style={[styles.chip, form.sex === opt.value && styles.chipActive]}
-                onPress={() => setForm((f) => ({ ...f, sex: opt.value }))}
-              >
-                <Text style={form.sex === opt.value ? styles.chipTextActive : styles.chipText}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.label}>Date de naissance</Text>
-          <DatePickerInput
-            value={form.birthDate?.slice(0, 10) ?? ''}
-            onChange={(v) => setForm((f) => ({ ...f, birthDate: v }))}
-          />
-
-          <View style={styles.switchRow}>
-            <Text style={styles.label}>Sterilise(e)</Text>
-            <Switch
-              value={!!form.sterilized}
-              onValueChange={(v) => setForm((f) => ({ ...f, sterilized: v }))}
-            />
-          </View>
-
-          <Text style={styles.label}>Numero de puce / tatouage</Text>
-          <TextInput
-            style={styles.input}
-            value={form.microchipNumber ?? ''}
-            onChangeText={(v) => setForm((f) => ({ ...f, microchipNumber: v }))}
-          />
-
-          <Text style={styles.label}>Poids actuel (kg)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="decimal-pad"
-            value={form.currentWeightKg != null ? String(form.currentWeightKg) : ''}
-            onChangeText={(v) => setForm((f) => ({ ...f, currentWeightKg: v ? parseFloat(v) : undefined }))}
-          />
-
-          <PrimaryButton
-            title={saving ? 'Enregistrement...' : 'Enregistrer le profil'}
-            onPress={onSave}
-            disabled={saving}
-            loading={saving}
-            style={styles.saveButton}
-          />
-        </Accordion>
 
         <Accordion title="Intervenants" subtitle={linkedProviders.length > 0 ? `${linkedProviders.length} associe(s)` : 'Aucun'}>
           <View style={styles.accordionAddRow}>
@@ -416,22 +304,6 @@ const styles = StyleSheet.create({
   },
   photoPlaceholderText: { color: colors.textSecondary, textAlign: 'center', paddingHorizontal: spacing.sm },
   photoUploading: { textAlign: 'center', color: colors.textSecondary, marginTop: spacing.xs },
-  label: { color: colors.textSecondary, marginBottom: spacing.xs, marginTop: spacing.md },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    padding: spacing.md,
-    backgroundColor: colors.fieldBackground,
-    color: '#000000',
-  },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
-  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  chipText: { color: colors.textPrimary },
-  chipTextActive: { color: 'white', fontWeight: '600' },
-  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xs },
-  saveButton: { marginTop: spacing.lg },
   dashboardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.lg },
   dashboardTile: {
     flexBasis: '47%',
