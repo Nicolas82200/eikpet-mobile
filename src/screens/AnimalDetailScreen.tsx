@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -134,8 +134,7 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
 
   return (
     <>
-      <KeyboardAvoidingScreen>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingScreen contentContainerStyle={styles.container}>
         <TouchableOpacity style={styles.photoContainer} onPress={onPickPhoto} disabled={uploadingPhoto}>
           {animal.photoUrl ? (
             <AuthenticatedImage
@@ -256,7 +255,6 @@ export default function AnimalDetailScreen({ route, navigation }: Props) {
         <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
           <Text style={styles.deleteButtonText}>Supprimer cet animal</Text>
         </TouchableOpacity>
-      </ScrollView>
       </KeyboardAvoidingScreen>
 
       <AddModal
