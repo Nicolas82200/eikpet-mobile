@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
@@ -32,7 +32,7 @@ export default function LoginScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingScreen>
       <View style={styles.container}>
-      <Text style={styles.title}>EikPet</Text>
+      <Image source={require('../../assets/eikpet-logo-accent.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.subtitle}>La santé de tes animaux, centralisée</Text>
       <TextInput
         style={styles.input}
@@ -70,7 +70,7 @@ export default function LoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: spacing.xl },
-  title: { fontSize: 34, fontWeight: 'bold', textAlign: 'center', color: colors.accent },
+  logo: { width: 160, height: 160, alignSelf: 'center' },
   subtitle: { textAlign: 'center', color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.xxl },
   input: {
     borderWidth: 1,
