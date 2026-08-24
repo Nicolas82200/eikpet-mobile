@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -370,8 +370,7 @@ export default function MedicalProfileScreen({ route }: Props) {
 
   return (
     <>
-      <KeyboardAvoidingScreen>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingScreen contentContainerStyle={styles.container}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>Fiche medicale — {animalName}</Text>
             {saveStatus === 'saving' && <Text style={styles.saveStatusText}>Enregistrement...</Text>}
@@ -571,7 +570,6 @@ export default function MedicalProfileScreen({ route }: Props) {
           <View style={styles.weightSection}>
             <WeightCurveSection animalId={animalId} />
           </View>
-        </ScrollView>
       </KeyboardAvoidingScreen>
 
       <AddModal

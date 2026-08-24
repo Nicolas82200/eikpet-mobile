@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
@@ -41,8 +41,7 @@ export default function RegisterScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingScreen>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingScreen contentContainerStyle={styles.container}>
       <Text style={styles.title}>Creer un compte</Text>
       <TextInput style={styles.input} placeholder="Prenom" value={firstName} onChangeText={setFirstName} />
       <TextInput style={styles.input} placeholder="Nom" value={lastName} onChangeText={setLastName} />
@@ -86,7 +85,6 @@ export default function RegisterScreen({ navigation }: Props) {
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
         <Text style={styles.link}>Deja un compte ? Se connecter</Text>
       </TouchableOpacity>
-      </ScrollView>
     </KeyboardAvoidingScreen>
   );
 }

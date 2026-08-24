@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -62,8 +62,7 @@ export default function AppointmentFollowUpScreen({ route, navigation }: Props) 
   }
 
   return (
-    <KeyboardAvoidingScreen>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingScreen contentContainerStyle={styles.container}>
         <Text style={styles.title}>Suivi du rendez-vous — {animal.name}</Text>
         {entry && (
           <Text style={styles.subtitle}>
@@ -120,7 +119,6 @@ export default function AppointmentFollowUpScreen({ route, navigation }: Props) 
             <Text style={styles.cardSubtitle}>Medicaments donnes par le veto, avec rappels de prise</Text>
           </Card>
         </TouchableOpacity>
-      </ScrollView>
     </KeyboardAvoidingScreen>
   );
 }
