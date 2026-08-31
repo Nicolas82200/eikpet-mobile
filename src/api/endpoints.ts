@@ -1,16 +1,19 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { apiRequest, apiUpload } from './client';
 import { API_BASE_URL } from './config';
-import { saveTokens, clearTokens, getAccessToken } from '../auth/token-storage';
-import { getRefreshToken } from '../auth/token-storage';
+import { saveTokens, clearTokens, getAccessToken , getRefreshToken } from '../auth/token-storage';
 import type {
   Animal,
   AnimalBudget,
   AuthTokens,
+  BehavioralNote,
   BoardingEntry,
   CalendarEntry,
   DocumentCategory,
   DocumentRecord,
+  EmergencySheet,
+  EmergencyShareLink,
+  EmergencyShareLinkWithToken,
   Household,
   HouseholdBudget,
   HouseholdMember,
@@ -159,6 +162,35 @@ export async function uploadAnimalPhoto(
   return apiUpload(`/animals/${animalId}/photo`, formData);
 }
 
+// --- Fiche d'urgence ---
+
+export function getEmergencySheet(animalId: number): Promise<EmergencySheet> {
+  return apiRequest(`/animals/${animalId}/emergency-sheet`);
+}
+
+/** Genere un lien de partage temporaire (pet-sitter), lecture seule, sans compte. */
+export function createEmergencyShareLink(
+  animalId: number,
+  expiresInHours?: number,
+): Promise<EmergencyShareLinkWithToken> {
+  return apiRequest(`/animals/${animalId}/emergency-sheet/share-links`, {
+    method: 'POST',
+    body: { expiresInHours },
+  });
+}
+
+export function listEmergencyShareLinks(animalId: number): Promise<EmergencyShareLink[]> {
+  return apiRequest(`/animals/${animalId}/emergency-sheet/share-links`);
+}
+
+export function revokeEmergencyShareLink(animalId: number, linkId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/emergency-sheet/share-links/${linkId}`, { method: 'DELETE' });
+}
+
+export function buildEmergencySharedUrl(token: string): string {
+  return `${API_BASE_URL}/emergency-sheet/shared/${token}`;
+}
+
 // --- Fiche medicale ---
 
 export function getMedicalProfile(animalId: number): Promise<MedicalProfile | null> {
@@ -182,6 +214,18 @@ export function createTreatment(
 
 export function deleteTreatment(animalId: number, treatmentId: number): Promise<void> {
   return apiRequest(`/animals/${animalId}/treatments/${treatmentId}`, { method: 'DELETE' });
+}
+
+export function listBehavioralNotes(animalId: number): Promise<BehavioralNote[]> {
+  return apiRequest(`/animals/${animalId}/behavioral-notes`);
+}
+
+export function createBehavioralNote(animalId: number, note: string): Promise<BehavioralNote> {
+  return apiRequest(`/animals/${animalId}/behavioral-notes`, { method: 'POST', body: { note } });
+}
+
+export function deleteBehavioralNote(animalId: number, noteId: number): Promise<void> {
+  return apiRequest(`/animals/${animalId}/behavioral-notes/${noteId}`, { method: 'DELETE' });
 }
 
 export function listSurgicalHistory(animalId: number): Promise<SurgicalHistoryEntry[]> {

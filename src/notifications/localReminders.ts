@@ -100,3 +100,92 @@ export async function cancelTreatmentReminders(treatmentId: number): Promise<voi
   );
   await Promise.all(toCancel.map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
 }
+
+export const BOARDING_DUE_CATEGORY = 'boarding-due';
+const BOARDING_REMINDER_HOUR = 9;
+
+/** Enregistre l'action "Marquer comme payee" affichee directement sur les notifications de pension. */
+export async function ensureBoardingNotificationCategory(): Promise<void> {
+  await Notifications.setNotificationCategoryAsync(BOARDING_DUE_CATEGORY, [
+    { identifier: 'mark-paid', buttonTitle: 'Marquer comme payee', options: { opensAppToForeground: false } },
+  ]);
+}
+
+interface BoardingReminderParams {
+  animalId: number;
+  animalName: string;
+  boardingId: number;
+  boardingName: string;
+  dueDate: string; // AAAA-MM-JJ
+  isPremium: boolean;
+}
+
+export type BoardingReminderNotificationData = {
+  kind: 'boarding-due';
+  animalId: number;
+  animalName: string;
+  boardingId: number;
+};
+
+/**
+ * Rappels d'echeance de pension : 1 jour avant en gratuit ; 1 semaine avant puis chaque jour
+ * jusqu'a l'echeance, plus des relances apres coup (J+1, J+3, J+7), en premium.
+ */
+export async function scheduleBoardingReminders(params: BoardingReminderParams): Promise<void> {
+  const { animalId, animalName, boardingId, boardingName, dueDate, isPremium } = params;
+  await cancelBoardingReminders(boardingId);
+
+  const due = new Date(`${dueDate}T00:00:00`);
+  due.setHours(BOARDING_REMINDER_HOUR, 0, 0, 0);
+  const now = Date.now();
+
+  const notices: { date: Date; title: string; body: string }[] = [];
+
+  if (isPremium) {
+    for (let daysBefore = 7; daysBefore >= 1; daysBefore--) {
+      const date = new Date(due);
+      date.setDate(date.getDate() - daysBefore);
+      notices.push({
+        date,
+        title: 'Pension a venir',
+        body: `${boardingName} — ${animalName} : echeance dans ${daysBefore} jour(s)`,
+      });
+    }
+    notices.push({ date: new Date(due), title: "C'est le jour du paiement", body: `${boardingName} — ${animalName}` });
+    for (const daysAfter of [1, 3, 7]) {
+      const date = new Date(due);
+      date.setDate(date.getDate() + daysAfter);
+      notices.push({
+        date,
+        title: "Vous n'avez pas paye",
+        body: `${boardingName} — ${animalName} : le paiement est en retard`,
+      });
+    }
+  } else {
+    const date = new Date(due);
+    date.setDate(date.getDate() - 1);
+    notices.push({ date, title: 'Pension a venir', body: `${boardingName} — ${animalName} : echeance demain` });
+  }
+
+  for (const notice of notices) {
+    if (notice.date.getTime() <= now) continue;
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: notice.title,
+        body: notice.body,
+        data: { kind: 'boarding-due', animalId, animalName, boardingId } satisfies BoardingReminderNotificationData,
+        categoryIdentifier: BOARDING_DUE_CATEGORY,
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notice.date },
+    });
+  }
+}
+
+/** Annule tous les rappels programmes pour cette echeance (ex: supprimee, modifiee ou marquee payee). */
+export async function cancelBoardingReminders(boardingId: number): Promise<void> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const toCancel = scheduled.filter(
+    (n) => n.content.data?.kind === 'boarding-due' && n.content.data?.boardingId === boardingId,
+  );
+  await Promise.all(toCancel.map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+}

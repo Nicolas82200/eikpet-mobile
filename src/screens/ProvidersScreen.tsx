@@ -8,8 +8,13 @@ import type { Provider, ProviderType } from '../types/api';
 import { PROVIDER_TYPES, getProviderTypeLabel } from '../data/providerTypes';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
+import Card from '../components/Card';
+import Dropdown from '../components/Dropdown';
+import PrimaryButton from '../components/PrimaryButton';
+import ScreenHeader from '../components/ScreenHeader';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Providers'>;
 
@@ -17,11 +22,12 @@ export default function ProvidersScreen({ route, navigation }: Props) {
   const { householdId, householdName } = route.params;
   const [providers, setProviders] = useState<Provider[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [type, setType] = useState<ProviderType>('veto');
+  const [type, setType] = useState<ProviderType | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
 
   const load = useCallback(() => {
     return api.listProviders(householdId).then(setProviders).catch(showLoadError);
@@ -31,14 +37,14 @@ export default function ProvidersScreen({ route, navigation }: Props) {
   useFocusEffect(trigger);
 
   const resetForm = () => {
-    setType('veto');
+    setType(null);
     setName('');
     setPhone('');
     setAddress('');
   };
 
   const onCreate = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !type) return;
     setSubmitting(true);
     try {
       await api.createProvider(householdId, {
@@ -49,6 +55,34 @@ export default function ProvidersScreen({ route, navigation }: Props) {
       });
       resetForm();
       setModalVisible(false);
+      load();
+    } catch (error) {
+      showError(error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (provider: Provider) => {
+    setEditingProvider(provider);
+    setType(provider.type);
+    setName(provider.name);
+    setPhone(provider.phone ?? '');
+    setAddress(provider.address ?? '');
+  };
+
+  const onSaveEdit = async () => {
+    if (!editingProvider || !name.trim() || !type) return;
+    setSubmitting(true);
+    try {
+      await api.updateProvider(editingProvider.id, {
+        type,
+        name: name.trim(),
+        phone: phone.trim() || undefined,
+        address: address.trim() || undefined,
+      });
+      resetForm();
+      setEditingProvider(null);
       load();
     } catch (error) {
       showError(error);
@@ -75,6 +109,31 @@ export default function ProvidersScreen({ route, navigation }: Props) {
     ]);
   };
 
+  const renderForm = (onSubmit: () => void, submitLabel: string) => (
+    <>
+      <Text style={styles.label}>Type</Text>
+      <Dropdown value={type} onChange={setType} options={PROVIDER_TYPES} placeholder="Type d'intervenant" />
+      <View style={styles.spacer} />
+
+      <TextInput style={styles.input} placeholder="Nom" value={name} onChangeText={setName} />
+      <TextInput
+        style={styles.input}
+        placeholder="Telephone"
+        keyboardType="phone-pad"
+        value={phone}
+        onChangeText={setPhone}
+      />
+      <TextInput style={styles.input} placeholder="Adresse" value={address} onChangeText={setAddress} />
+
+      <PrimaryButton
+        title={submitting ? 'Enregistrement...' : submitLabel}
+        onPress={onSubmit}
+        disabled={submitting || !name.trim() || !type}
+        loading={submitting}
+      />
+    </>
+  );
+
   return (
     <>
       <FlatList
@@ -85,10 +144,7 @@ export default function ProvidersScreen({ route, navigation }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>Intervenants</Text>
-              <AddIconButton onPress={() => setModalVisible(true)} />
-            </View>
+            <ScreenHeader title="Intervenants" action={<AddIconButton onPress={() => setModalVisible(true)} />} />
             <TouchableOpacity
               style={styles.mapLink}
               onPress={() => navigation.navigate('ProvidersMap', { householdId, householdName })}
@@ -98,7 +154,7 @@ export default function ProvidersScreen({ route, navigation }: Props) {
           </>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Card>
             <Text style={styles.cardType}>{getProviderTypeLabel(item.type)}</Text>
             <Text style={styles.cardTitle}>{item.name}</Text>
             {item.phone && (
@@ -107,12 +163,17 @@ export default function ProvidersScreen({ route, navigation }: Props) {
               </TouchableOpacity>
             )}
             {item.address && <Text style={styles.cardSubtitle}>{item.address}</Text>}
-            <TouchableOpacity onPress={() => onDelete(item)}>
-              <Text style={styles.deleteLink}>Supprimer</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.cardActions}>
+              <TouchableOpacity onPress={() => openEditModal(item)}>
+                <Text style={styles.editLink}>Modifier</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => onDelete(item)}>
+                <Text style={styles.deleteLink}>Supprimer</Text>
+              </TouchableOpacity>
+            </View>
+          </Card>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Aucun intervenant pour l'instant</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Aucun intervenant pour l&apos;instant</Text>}
       />
 
       <AddModal
@@ -123,32 +184,18 @@ export default function ProvidersScreen({ route, navigation }: Props) {
           resetForm();
         }}
       >
-        <Text style={styles.label}>Type</Text>
-        <View style={styles.typeRow}>
-          {PROVIDER_TYPES.map((t) => (
-            <TouchableOpacity
-              key={t.value}
-              style={[styles.chip, type === t.value && styles.chipActive]}
-              onPress={() => setType(t.value)}
-            >
-              <Text style={type === t.value ? styles.chipTextActive : styles.chipText}>{t.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {renderForm(onCreate, 'Ajouter')}
+      </AddModal>
 
-        <TextInput style={styles.input} placeholder="Nom" value={name} onChangeText={setName} />
-        <TextInput
-          style={styles.input}
-          placeholder="Telephone"
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
-        />
-        <TextInput style={styles.input} placeholder="Adresse" value={address} onChangeText={setAddress} />
-
-        <TouchableOpacity style={styles.submitButton} onPress={onCreate} disabled={submitting || !name.trim()}>
-          <Text style={styles.submitButtonText}>{submitting ? 'Enregistrement...' : 'Ajouter'}</Text>
-        </TouchableOpacity>
+      <AddModal
+        visible={!!editingProvider}
+        title="Modifier l'intervenant"
+        onClose={() => {
+          setEditingProvider(null);
+          resetForm();
+        }}
+      >
+        {renderForm(onSaveEdit, 'Enregistrer')}
       </AddModal>
     </>
   );
@@ -156,25 +203,26 @@ export default function ProvidersScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  mapLink: { marginBottom: 16 },
-  mapLinkText: { color: '#B8863B', fontWeight: '600' },
-  card: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardType: { color: '#B8863B', fontWeight: '700', fontSize: 12, textTransform: 'uppercase' },
-  cardTitle: { fontSize: 16, fontWeight: '600', marginTop: 4 },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  cardLink: { color: '#B8863B', marginTop: 4 },
-  deleteLink: { color: '#B3452C', fontWeight: '600', marginTop: 8 },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  label: { color: '#8A7B68', marginBottom: 8 },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
-  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  chipText: { color: '#3A3226' },
-  chipTextActive: { color: 'white', fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
-  submitButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  submitButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
+  content: { padding: spacing.lg },
+  mapLink: { marginBottom: spacing.lg },
+  mapLinkText: { color: colors.accent, fontWeight: '600' },
+  cardType: { color: colors.accent, fontWeight: '700', fontSize: 12, textTransform: 'uppercase' },
+  cardTitle: { fontSize: 16, fontWeight: '600', marginTop: spacing.xs },
+  cardSubtitle: { color: colors.textSecondary, marginTop: spacing.xs },
+  cardLink: { color: colors.accent, marginTop: spacing.xs },
+  cardActions: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.sm },
+  editLink: { color: colors.accent, fontWeight: '600' },
+  deleteLink: { color: colors.danger, fontWeight: '600' },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  label: { color: colors.textSecondary, marginBottom: spacing.sm },
+  spacer: { height: spacing.md },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
 });

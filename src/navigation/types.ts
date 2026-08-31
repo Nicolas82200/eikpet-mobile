@@ -9,7 +9,7 @@ export type AppStackParamList = {
   Households: undefined;
   Animals: { householdId: number; householdName: string };
   AnimalDetail: { animalId: number; animalName: string; householdId: number };
-  MedicalProfile: { animalId: number; animalName: string; species: string };
+  MedicalProfile: { animalId: number; animalName: string; species: string; householdId: number };
   HealthEntries: { animalId: number; animalName: string; species: string };
   Calendar: { householdId: number; householdName: string };
   Documents: { householdId: number; animalId?: number };
@@ -17,8 +17,9 @@ export type AppStackParamList = {
   Boardings: { animalId: number; animalName: string };
   Reports: { animalId: number; animalName: string };
   Budget: { householdId: number; householdName: string };
+  AnimalBudget: { animalId: number; animalName: string };
   RidingSessions: { animalId: number; animalName: string };
-  WeightCurve: { animalId: number; animalName: string };
+  EmergencySheet: { animalId: number; animalName: string };
   ProvidersMap: { householdId: number; householdName: string };
   AppointmentFollowUp: { animalId: number; entryId: number };
   HouseholdMembers: { householdId: number; householdName: string; inviteCode: string; isOwner: boolean };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { colors, radius, spacing } from '../theme/colors';
 
 interface Props {
   title: string;
@@ -7,15 +8,22 @@ interface Props {
   defaultOpen?: boolean;
   warning?: boolean;
   children: React.ReactNode;
+  /** Mode controle (optionnel) : quand fourni avec onToggle, remplace l'etat interne. Permet a un
+   * parent de forcer un seul accordion ouvert a la fois parmi plusieurs instances. */
+  open?: boolean;
+  onToggle?: () => void;
 }
 
 /** Section repliable : le contenu n'est monte que quand elle est ouverte, pour ne pas surcharger l'ecran par defaut. */
-export default function Accordion({ title, subtitle, defaultOpen = false, warning = false, children }: Props) {
-  const [open, setOpen] = useState(defaultOpen);
+export default function Accordion({ title, subtitle, defaultOpen = false, warning = false, children, open: controlledOpen, onToggle }: Props) {
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isControlled = controlledOpen !== undefined && onToggle !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const handlePress = isControlled ? onToggle : () => setInternalOpen((o) => !o);
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.header} onPress={() => setOpen((o) => !o)} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.header} onPress={handlePress} activeOpacity={0.7}>
         <View style={styles.headerText}>
           <View style={styles.titleRow}>
             {warning && <View style={styles.warningDot} />}
@@ -31,18 +39,18 @@ export default function Accordion({ title, subtitle, defaultOpen = false, warnin
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#EDE3D0', borderRadius: 8, marginBottom: 12, overflow: 'hidden' },
+  container: { backgroundColor: colors.divider, borderRadius: radius.sm, marginBottom: spacing.md, overflow: 'hidden' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: spacing.lg,
   },
   headerText: { flex: 1 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { fontSize: 16, fontWeight: '600' },
-  subtitle: { color: '#8A7B68', marginTop: 2, fontSize: 13 },
-  chevron: { fontSize: 16, color: '#8A7B68', marginLeft: 12 },
+  subtitle: { color: colors.textSecondary, marginTop: 2, fontSize: 13 },
+  chevron: { fontSize: 16, color: colors.textSecondary, marginLeft: spacing.md },
   warningDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#d97706' },
-  content: { paddingHorizontal: 16, paddingBottom: 16 },
+  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
 });

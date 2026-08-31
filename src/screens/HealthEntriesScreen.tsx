@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
@@ -8,21 +8,25 @@ import type { HealthEntry, HealthEntryType, VaccinationScheduleStep } from '../t
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import AutocompleteInput from '../components/AutocompleteInput';
+import Card from '../components/Card';
 import DatePickerInput from '../components/DatePickerInput';
+import Dropdown from '../components/Dropdown';
+import PrimaryButton from '../components/PrimaryButton';
+import ReminderPicker from '../components/ReminderPicker';
+import ScreenHeader from '../components/ScreenHeader';
 import TimePickerInput from '../components/TimePickerInput';
-import RecurrencePicker from '../components/RecurrencePicker';
+import { HEALTH_ENTRY_TYPES, getHealthEntryTypeLabel } from '../data/healthEntryTypes';
 import { getVaccinesForSpecies } from '../data/vaccines';
 import { getDewormersForSpecies } from '../data/dewormers';
 import { scheduleAppointmentFollowUp, cancelAppointmentFollowUp } from '../notifications/localReminders';
 import { useRefreshable } from '../hooks/useRefreshable';
 import { showError, showLoadError } from '../utils/errorHandling';
 import { formatTime } from '../utils/formatting';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'HealthEntries'>;
 
-const TYPES: HealthEntryType[] = ['vaccin', 'vermifuge', 'rdv_veto', 'osteo', 'dentiste_equin', 'marechal', 'autre'];
-
-function getPrecisionOptions(type: HealthEntryType, species: string): readonly string[] {
+function getPrecisionOptions(type: HealthEntryType | null, species: string): readonly string[] {
   if (type === 'vaccin') return getVaccinesForSpecies(species);
   if (type === 'vermifuge') return getDewormersForSpecies(species);
   return [];
@@ -32,11 +36,13 @@ export default function HealthEntriesScreen({ route }: Props) {
   const { animalId, animalName, species } = route.params;
   const [entries, setEntries] = useState<HealthEntry[]>([]);
   const [vaccinationSchedule, setVaccinationSchedule] = useState<VaccinationScheduleStep[]>([]);
-  const [type, setType] = useState<HealthEntryType>('vaccin');
+  const [type, setType] = useState<HealthEntryType | null>(null);
   const [customTypeLabel, setCustomTypeLabel] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [recurrenceMonths, setRecurrenceMonths] = useState<number | null>(null);
+  const [isPastAppointment, setIsPastAppointment] = useState(false);
+  const [createPrice, setCreatePrice] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
 
   const [reportEntry, setReportEntry] = useState<HealthEntry | null>(null);
@@ -58,11 +64,23 @@ export default function HealthEntriesScreen({ route }: Props) {
     setScheduledDate(step.targetDate);
     setScheduledTime('');
     setRecurrenceMonths(null);
+    setIsPastAppointment(false);
+    setCreatePrice('');
     setModalVisible(true);
   };
 
+  const resetCreateForm = () => {
+    setType(null);
+    setCustomTypeLabel('');
+    setScheduledDate('');
+    setScheduledTime('');
+    setRecurrenceMonths(null);
+    setIsPastAppointment(false);
+    setCreatePrice('');
+  };
+
   const onCreate = async () => {
-    if (!scheduledDate) return;
+    if (!type || !scheduledDate) return;
     try {
       const entry = await api.createHealthEntry(animalId, {
         type,
@@ -70,21 +88,20 @@ export default function HealthEntriesScreen({ route }: Props) {
         scheduledTime: scheduledTime || undefined,
         customTypeLabel: customTypeLabel.trim() || undefined,
         recurrenceMonths: recurrenceMonths ?? undefined,
+        status: isPastAppointment ? 'fait' : 'prevu',
+        price: isPastAppointment && createPrice ? parseFloat(createPrice) : undefined,
       });
       if (scheduledTime) {
         await scheduleAppointmentFollowUp({
           animalId,
           animalName,
           entryId: entry.id,
-          entryLabel: customTypeLabel.trim() || type,
+          entryLabel: customTypeLabel.trim() || getHealthEntryTypeLabel(type),
           scheduledDate,
           scheduledTime,
         });
       }
-      setCustomTypeLabel('');
-      setScheduledDate('');
-      setScheduledTime('');
-      setRecurrenceMonths(null);
+      resetCreateForm();
       setModalVisible(false);
       load();
     } catch (error) {
@@ -153,12 +170,12 @@ export default function HealthEntriesScreen({ route }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
-            <View style={styles.titleRow}>
-              <Text style={styles.title}>Carnet de sante — {animalName}</Text>
-              <AddIconButton onPress={() => setModalVisible(true)} />
-            </View>
+            <ScreenHeader
+              title={`Carnet de sante — ${animalName}`}
+              action={<AddIconButton onPress={() => setModalVisible(true)} />}
+            />
             {vaccinationSchedule.length > 0 && (
-              <View style={styles.scheduleCard}>
+              <Card style={styles.scheduleCard}>
                 <Text style={styles.scheduleTitle}>Protocole de primo-vaccination suggere</Text>
                 <Text style={styles.scheduleSubtitle}>
                   A adapter avec ton veterinaire selon l&apos;etat des anticorps maternels.
@@ -174,13 +191,13 @@ export default function HealthEntriesScreen({ route }: Props) {
                     </TouchableOpacity>
                   </View>
                 ))}
-              </View>
+              </Card>
             )}
           </>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{item.customTypeLabel ?? item.type}</Text>
+          <Card>
+            <Text style={styles.cardTitle}>{item.customTypeLabel ?? getHealthEntryTypeLabel(item.type)}</Text>
             <Text style={styles.cardSubtitle}>
               {item.scheduledDate}
               {item.scheduledTime ? ` a ${formatTime(item.scheduledTime)}` : ''} —{' '}
@@ -201,23 +218,31 @@ export default function HealthEntriesScreen({ route }: Props) {
                 <Text style={styles.cardActionTextDanger}>Supprimer</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </Card>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l'instant</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Aucune entree pour l&apos;instant</Text>}
       />
 
-      <AddModal visible={modalVisible} title="Ajouter une entree" onClose={() => setModalVisible(false)}>
-        <View style={styles.typeRow}>
-          {TYPES.map((t) => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.typeChip, t === type && styles.typeChipActive]}
-              onPress={() => setType(t)}
-            >
-              <Text style={t === type ? styles.typeChipTextActive : styles.typeChipText}>{t}</Text>
-            </TouchableOpacity>
-          ))}
+      <AddModal
+        visible={modalVisible}
+        title="Ajouter une entree"
+        onClose={() => {
+          setModalVisible(false);
+          resetCreateForm();
+        }}
+      >
+        <View style={styles.switchRow}>
+          <Text style={styles.label}>Rendez-vous deja passe</Text>
+          <Switch value={isPastAppointment} onValueChange={setIsPastAppointment} />
         </View>
+
+        <Dropdown
+          value={type}
+          onChange={setType}
+          options={HEALTH_ENTRY_TYPES}
+          placeholder="Type d'entree"
+        />
+        <View style={styles.spacer} />
         <AutocompleteInput
           value={customTypeLabel}
           onChange={setCustomTypeLabel}
@@ -226,10 +251,19 @@ export default function HealthEntriesScreen({ route }: Props) {
         />
         <DatePickerInput value={scheduledDate} onChange={setScheduledDate} placeholder="Date de l'echeance" />
         <TimePickerInput value={scheduledTime} onChange={setScheduledTime} placeholder="Heure (optionnel)" />
-        <RecurrencePicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
-        <TouchableOpacity style={styles.addButton} onPress={onCreate}>
-          <Text style={styles.addButtonText}>Ajouter</Text>
-        </TouchableOpacity>
+        <ReminderPicker value={recurrenceMonths} onChange={setRecurrenceMonths} />
+
+        {isPastAppointment && (
+          <TextInput
+            style={styles.input}
+            placeholder="Prix paye (optionnel)"
+            keyboardType="decimal-pad"
+            value={createPrice}
+            onChangeText={setCreatePrice}
+          />
+        )}
+
+        <PrimaryButton title="Ajouter" onPress={onCreate} disabled={!type || !scheduledDate} />
       </AddModal>
 
       <AddModal visible={!!reportEntry} title="Compte-rendu" onClose={() => setReportEntry(null)}>
@@ -248,9 +282,12 @@ export default function HealthEntriesScreen({ route }: Props) {
           value={price}
           onChangeText={setPrice}
         />
-        <TouchableOpacity style={styles.addButton} onPress={onSaveReport} disabled={savingReport}>
-          <Text style={styles.addButtonText}>{savingReport ? 'Enregistrement...' : 'Enregistrer'}</Text>
-        </TouchableOpacity>
+        <PrimaryButton
+          title={savingReport ? 'Enregistrement...' : 'Enregistrer'}
+          onPress={onSaveReport}
+          disabled={savingReport}
+          loading={savingReport}
+        />
       </AddModal>
     </>
   );
@@ -258,39 +295,40 @@ export default function HealthEntriesScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', flexShrink: 1, marginRight: 12 },
-  scheduleCard: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 16 },
-  scheduleTitle: { fontSize: 15, fontWeight: '700', color: '#3A3226' },
-  scheduleSubtitle: { color: '#8A7B68', marginTop: 4, marginBottom: 10, fontSize: 12 },
+  content: { padding: spacing.lg },
+  scheduleCard: {},
+  scheduleTitle: { ...typography.sectionTitle, fontSize: 15 },
+  scheduleSubtitle: { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: 10, fontSize: 12 },
   scheduleStep: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#E3D8C4',
+    borderTopColor: colors.border,
   },
-  scheduleStepText: { flexShrink: 1, marginRight: 12 },
-  scheduleStepLabel: { color: '#3A3226', fontWeight: '600' },
-  scheduleStepDate: { color: '#8A7B68', marginTop: 2, fontSize: 12 },
-  scheduleStepAdd: { color: '#B8863B', fontWeight: '600' },
-  card: { backgroundColor: '#FAF6EF', borderRadius: 8, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '600', textTransform: 'capitalize' },
-  cardSubtitle: { color: '#8A7B68', marginTop: 4 },
-  cardReport: { color: '#3A3226', marginTop: 6, fontStyle: 'italic' },
-  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 10 },
-  cardActionText: { color: '#B8863B', fontWeight: '600' },
-  cardActionTextDanger: { color: '#B3452C', fontWeight: '600' },
-  empty: { color: '#8A7B68', textAlign: 'center', marginTop: 24 },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  typeChip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  typeChipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  typeChipText: { color: '#3A3226' },
-  typeChipTextActive: { color: 'white' },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#EFE2C4', color: '#000000' },
+  scheduleStepText: { flexShrink: 1, marginRight: spacing.md },
+  scheduleStepLabel: { color: colors.textPrimary, fontWeight: '600' },
+  scheduleStepDate: { color: colors.textSecondary, marginTop: 2, fontSize: 12 },
+  scheduleStepAdd: { color: colors.accent, fontWeight: '600' },
+  cardTitle: { ...typography.sectionTitle, fontSize: 16, textTransform: 'capitalize' },
+  cardSubtitle: { ...typography.caption, marginTop: spacing.xs },
+  cardReport: { color: colors.textPrimary, marginTop: spacing.sm, fontStyle: 'italic' },
+  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg, marginTop: spacing.md },
+  cardActionText: { color: colors.accent, fontWeight: '600' },
+  cardActionTextDanger: { color: colors.danger, fontWeight: '600' },
+  empty: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
+  spacer: { height: spacing.md },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  label: { color: colors.textSecondary },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
-  addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
 });

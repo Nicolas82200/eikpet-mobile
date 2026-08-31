@@ -6,6 +6,9 @@ import * as Notifications from 'expo-notifications';
 import { useAuth } from '../auth/AuthContext';
 import { colors } from '../theme/colors';
 import { registerForPushNotifications } from '../notifications/registerForPushNotifications';
+import { cancelBoardingReminders, ensureBoardingNotificationCategory } from '../notifications/localReminders';
+import * as api from '../api/endpoints';
+import { showError } from '../utils/errorHandling';
 import type { AppStackParamList, AuthStackParamList } from './types';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -29,7 +32,8 @@ import BudgetScreen from '../screens/BudgetScreen';
 import RidingSessionsScreen from '../screens/RidingSessionsScreen';
 import ProvidersMapScreen from '../screens/ProvidersMapScreen';
 import PracticalInfoScreen from '../screens/PracticalInfoScreen';
-import WeightCurveScreen from '../screens/WeightCurveScreen';
+import EmergencySheetScreen from '../screens/EmergencySheetScreen';
+import AnimalBudgetScreen from '../screens/AnimalBudgetScreen';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -72,6 +76,22 @@ function handleNotificationResponse(
   const data = response.notification.request.content.data;
   if (data?.kind === 'appointment-followup' && typeof data.animalId === 'number' && typeof data.entryId === 'number') {
     navigation.navigate('AppointmentFollowUp', { animalId: data.animalId, entryId: data.entryId });
+    return;
+  }
+  if (
+    data?.kind === 'boarding-due' &&
+    typeof data.animalId === 'number' &&
+    typeof data.animalName === 'string' &&
+    typeof data.boardingId === 'number'
+  ) {
+    if (response.actionIdentifier === 'mark-paid') {
+      api
+        .updateBoarding(data.animalId, data.boardingId, { status: 'regle' })
+        .then(() => cancelBoardingReminders(data.boardingId as number))
+        .catch(showError);
+      return;
+    }
+    navigation.navigate('Boardings', { animalId: data.animalId, animalName: data.animalName });
   }
 }
 
@@ -80,6 +100,7 @@ function AppNavigator() {
 
   useEffect(() => {
     registerForPushNotifications().catch(() => undefined);
+    ensureBoardingNotificationCategory().catch(() => undefined);
 
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (response) {
@@ -122,10 +143,19 @@ function AppNavigator() {
       <AppStack.Screen name="Boardings" component={BoardingsScreen} options={{ title: 'Pension' }} />
       <AppStack.Screen name="Reports" component={ReportsScreen} options={{ title: 'Comptes-rendus' }} />
       <AppStack.Screen name="Budget" component={BudgetScreen} options={{ title: 'Budget' }} />
+      <AppStack.Screen
+        name="AnimalBudget"
+        component={AnimalBudgetScreen}
+        options={{ title: 'Depenses par categorie' }}
+      />
       <AppStack.Screen name="RidingSessions" component={RidingSessionsScreen} options={{ title: 'Seances' }} />
       <AppStack.Screen name="ProvidersMap" component={ProvidersMapScreen} options={{ title: 'Carte' }} />
       <AppStack.Screen name="PracticalInfo" component={PracticalInfoScreen} options={{ title: 'Infos pratiques' }} />
-      <AppStack.Screen name="WeightCurve" component={WeightCurveScreen} options={{ title: 'Courbe de poids' }} />
+      <AppStack.Screen
+        name="EmergencySheet"
+        component={EmergencySheetScreen}
+        options={{ title: "Fiche d'urgence" }}
+      />
     </AppStack.Navigator>
   );
 }

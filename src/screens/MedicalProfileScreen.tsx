@@ -1,17 +1,21 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
-import type { MedicalProfile, SurgicalHistoryEntry, Treatment } from '../types/api';
+import type { BehavioralNote, MedicalProfile, Provider, SurgicalHistoryEntry, Treatment } from '../types/api';
 import KeyboardAvoidingScreen from '../components/KeyboardAvoidingScreen';
 import AddIconButton from '../components/AddIconButton';
 import AddModal from '../components/AddModal';
 import Accordion from '../components/Accordion';
 import AutocompleteInput from '../components/AutocompleteInput';
+import Card from '../components/Card';
+import Dropdown from '../components/Dropdown';
 import NullableField from '../components/NullableField';
 import DatePickerInput from '../components/DatePickerInput';
+import PrimaryButton from '../components/PrimaryButton';
+import WeightCurveSection from '../components/WeightCurveSection';
 import { scheduleTreatmentReminders, cancelTreatmentReminders } from '../notifications/localReminders';
 import { getProceduresForSpecies } from '../data/procedures';
 import { TREATMENT_TYPES } from '../data/treatmentTypes';
@@ -23,14 +27,34 @@ import { INSURANCE_PROVIDERS } from '../data/insuranceProviders';
 import { NONE_LABELS } from '../data/medicalFieldDefaults';
 import { getFieldState } from '../utils/fieldState';
 import { showError, showLoadError } from '../utils/errorHandling';
+import { colors, radius, spacing, typography } from '../theme/colors';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MedicalProfile'>;
 
-const REMINDER_PRESETS = [
+const FREQUENCY_PRESETS = [
   { key: 'matin', label: 'Matin', time: '08:00' },
   { key: 'midi', label: 'Midi', time: '12:00' },
   { key: 'soir', label: 'Soir', time: '20:00' },
 ] as const;
+
+type DurationUnit = 'jours' | 'mois' | 'vie';
+
+const DURATION_UNIT_OPTIONS: { value: DurationUnit; label: string }[] = [
+  { value: 'jours', label: 'Jours' },
+  { value: 'mois', label: 'Mois' },
+  { value: 'vie', label: 'A vie' },
+];
+
+function formatPartialDate(entry: { performedYear: number; performedMonth: number | null; performedDay: number | null }): string {
+  const { performedYear, performedMonth, performedDay } = entry;
+  if (performedMonth && performedDay) {
+    return `${String(performedDay).padStart(2, '0')}/${String(performedMonth).padStart(2, '0')}/${performedYear}`;
+  }
+  if (performedMonth) {
+    return `${String(performedMonth).padStart(2, '0')}/${performedYear}`;
+  }
+  return String(performedYear);
+}
 
 function todayIsoDate(): string {
   const now = new Date();
@@ -41,7 +65,7 @@ function todayIsoDate(): string {
 }
 
 export default function MedicalProfileScreen({ route }: Props) {
-  const { animalId, animalName, species } = route.params;
+  const { animalId, animalName, species, householdId } = route.params;
   const [profile, setProfile] = useState<Partial<MedicalProfile>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const loadedRef = useRef(false);
@@ -52,15 +76,33 @@ export default function MedicalProfileScreen({ route }: Props) {
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [treatmentName, setTreatmentName] = useState('');
   const [treatmentDosage, setTreatmentDosage] = useState('');
-  const [reminderPresets, setReminderPresets] = useState<Set<string>>(new Set());
-  const [reminderStartDate, setReminderStartDate] = useState(todayIsoDate());
-  const [reminderDurationDays, setReminderDurationDays] = useState('');
+  const [frequencyPresets, setFrequencyPresets] = useState<Set<string>>(new Set());
+  const [treatmentStartDate, setTreatmentStartDate] = useState(todayIsoDate());
+  const [durationValue, setDurationValue] = useState('');
+  const [durationUnit, setDurationUnit] = useState<DurationUnit | null>(null);
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [treatmentModalVisible, setTreatmentModalVisible] = useState(false);
 
   const [surgicalHistory, setSurgicalHistory] = useState<SurgicalHistoryEntry[]>([]);
   const [procedureName, setProcedureName] = useState('');
-  const [performedOn, setPerformedOn] = useState('');
+  const [performedYear, setPerformedYear] = useState('');
+  const [performedMonth, setPerformedMonth] = useState('');
+  const [performedDay, setPerformedDay] = useState('');
   const [surgicalModalVisible, setSurgicalModalVisible] = useState(false);
+
+  const [behavioralNotes, setBehavioralNotes] = useState<BehavioralNote[]>([]);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const toggleSection = (key: string) => setOpenSection((current) => (current === key ? null : key));
+
+  const [vetModalVisible, setVetModalVisible] = useState(false);
+  const [newVetName, setNewVetName] = useState('');
+  const [newVetPhone, setNewVetPhone] = useState('');
+  const [newVetAddress, setNewVetAddress] = useState('');
+  const [savingVet, setSavingVet] = useState(false);
+  const [vetProviders, setVetProviders] = useState<Provider[]>([]);
 
   const load = useCallback(() => {
     api
@@ -73,7 +115,12 @@ export default function MedicalProfileScreen({ route }: Props) {
       .catch(showLoadError);
     api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
     api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(showLoadError);
-  }, [animalId]);
+    api.listBehavioralNotes(animalId).then(setBehavioralNotes).catch(showLoadError);
+    api
+      .listProviders(householdId)
+      .then((providers) => setVetProviders(providers.filter((p) => p.type === 'veto')))
+      .catch(() => setVetProviders([]));
+  }, [animalId, householdId]);
 
   useFocusEffect(load);
 
@@ -119,34 +166,57 @@ export default function MedicalProfileScreen({ route }: Props) {
     setProfile((prev) => ({ ...prev, [key]: value }));
   };
 
+  const resetTreatmentForm = () => {
+    setTreatmentName('');
+    setTreatmentDosage('');
+    setFrequencyPresets(new Set());
+    setTreatmentStartDate(todayIsoDate());
+    setDurationValue('');
+    setDurationUnit(null);
+    setRemindersEnabled(false);
+  };
+
   const onAddTreatment = async () => {
     if (!treatmentName.trim()) return;
-    const times = REMINDER_PRESETS.filter((p) => reminderPresets.has(p.key)).map((p) => p.time);
-    const durationDays = parseInt(reminderDurationDays, 10) || 0;
+    const selectedPresets = FREQUENCY_PRESETS.filter((p) => frequencyPresets.has(p.key));
+    const times = selectedPresets.map((p) => p.time);
+    const frequencyLabel = selectedPresets.map((p) => p.label).join(', ') || undefined;
+
+    let durationDays: number | null = null;
+    if (durationUnit === 'jours') durationDays = parseInt(durationValue, 10) || null;
+    if (durationUnit === 'mois') durationDays = (parseInt(durationValue, 10) || 0) * 30 || null;
+
+    const endDate =
+      durationUnit && durationUnit !== 'vie' && durationDays
+        ? (() => {
+            const d = new Date(`${treatmentStartDate}T00:00:00Z`);
+            d.setUTCDate(d.getUTCDate() + durationDays!);
+            return d.toISOString().slice(0, 10);
+          })()
+        : undefined;
+
     try {
       const treatment = await api.createTreatment(animalId, {
         name: treatmentName.trim(),
         dosage: treatmentDosage || null,
-        startDate: times.length > 0 ? reminderStartDate : undefined,
-        reminderTimes: times.length > 0 ? times.join(',') : null,
+        frequency: frequencyLabel,
+        startDate: treatmentStartDate,
+        endDate,
+        reminderTimes: remindersEnabled && times.length > 0 ? times.join(',') : null,
       });
-      if (times.length > 0 && durationDays > 0) {
+      if (remindersEnabled && times.length > 0 && durationDays) {
         await scheduleTreatmentReminders({
           animalId,
           animalName,
           treatmentId: treatment.id,
           treatmentName: treatment.name,
           dosage: treatment.dosage,
-          startDate: reminderStartDate,
+          startDate: treatmentStartDate,
           durationDays,
           times,
         });
       }
-      setTreatmentName('');
-      setTreatmentDosage('');
-      setReminderPresets(new Set());
-      setReminderStartDate(todayIsoDate());
-      setReminderDurationDays('');
+      resetTreatmentForm();
       setTreatmentModalVisible(false);
       api.listTreatments(animalId).then(setTreatments).catch(showLoadError);
     } catch (error) {
@@ -173,8 +243,8 @@ export default function MedicalProfileScreen({ route }: Props) {
     ]);
   };
 
-  const toggleReminderPreset = (key: string) => {
-    setReminderPresets((prev) => {
+  const toggleFrequencyPreset = (key: string) => {
+    setFrequencyPresets((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
         next.delete(key);
@@ -186,11 +256,19 @@ export default function MedicalProfileScreen({ route }: Props) {
   };
 
   const onAddSurgicalHistory = async () => {
-    if (!procedureName.trim()) return;
+    const year = parseInt(performedYear, 10);
+    if (!procedureName.trim() || !year) return;
     try {
-      await api.createSurgicalHistory(animalId, { procedureName: procedureName.trim(), performedOn: performedOn || null });
+      await api.createSurgicalHistory(animalId, {
+        procedureName: procedureName.trim(),
+        performedYear: year,
+        performedMonth: performedMonth ? parseInt(performedMonth, 10) : null,
+        performedDay: performedDay ? parseInt(performedDay, 10) : null,
+      });
       setProcedureName('');
-      setPerformedOn('');
+      setPerformedYear('');
+      setPerformedMonth('');
+      setPerformedDay('');
       setSurgicalModalVisible(false);
       api.listSurgicalHistory(animalId).then(setSurgicalHistory).catch(showLoadError);
     } catch (error) {
@@ -216,6 +294,72 @@ export default function MedicalProfileScreen({ route }: Props) {
     ]);
   };
 
+  const onAddNote = async () => {
+    if (!noteDraft.trim()) return;
+    setSavingNote(true);
+    try {
+      await api.createBehavioralNote(animalId, noteDraft.trim());
+      setNoteDraft('');
+      api.listBehavioralNotes(animalId).then(setBehavioralNotes).catch(showLoadError);
+    } catch (error) {
+      showError(error);
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  const onDeleteNote = (note: BehavioralNote) => {
+    Alert.alert('Supprimer cette note ?', note.note, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.deleteBehavioralNote(animalId, note.id);
+            setBehavioralNotes((prev) => prev.filter((n) => n.id !== note.id));
+          } catch (error) {
+            showError(error);
+          }
+        },
+      },
+    ]);
+  };
+
+  const onAddVet = async () => {
+    if (!newVetName.trim()) return;
+    setSavingVet(true);
+    try {
+      const provider = await api.createProvider(householdId, {
+        type: 'veto',
+        name: newVetName.trim(),
+        phone: newVetPhone.trim() || null,
+        address: newVetAddress.trim() || null,
+      });
+      await api.linkAnimalProvider(animalId, provider.id);
+      setField('referringVetName', provider.name);
+      setField('referringVetPhone', provider.phone ?? '');
+      setVetProviders((prev) => [...prev, provider]);
+      setNewVetName('');
+      setNewVetPhone('');
+      setNewVetAddress('');
+      setVetModalVisible(false);
+    } catch (error) {
+      showError(error);
+    } finally {
+      setSavingVet(false);
+    }
+  };
+
+  const onSelectVetName = (name: string) => {
+    setField('referringVetName', name);
+    const matched = vetProviders.find((p) => p.name.toLowerCase() === name.trim().toLowerCase());
+    if (matched) {
+      setField('referringVetPhone', matched.phone ?? '');
+      api.linkAnimalProvider(animalId, matched.id).catch(() => undefined);
+    }
+  };
+
   const antecedentsIncomplete =
     getFieldState(profile.chronicConditions, NONE_LABELS.chronicConditions) === 'empty' ||
     getFieldState(profile.allergies, NONE_LABELS.allergies) === 'empty' ||
@@ -226,8 +370,7 @@ export default function MedicalProfileScreen({ route }: Props) {
 
   return (
     <>
-      <KeyboardAvoidingScreen>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingScreen contentContainerStyle={styles.container}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>Fiche medicale — {animalName}</Text>
             {saveStatus === 'saving' && <Text style={styles.saveStatusText}>Enregistrement...</Text>}
@@ -235,7 +378,13 @@ export default function MedicalProfileScreen({ route }: Props) {
             {saveStatus === 'error' && <Text style={styles.saveStatusTextError}>Erreur</Text>}
           </View>
 
-          <Accordion title="Antecedents medicaux" subtitle="Maladies, allergies, regime, groupe sanguin" warning={antecedentsIncomplete}>
+          <Accordion
+            title="Antecedents medicaux"
+            subtitle="Maladies, allergies, regime, groupe sanguin"
+            warning={antecedentsIncomplete}
+            open={openSection === 'antecedents'}
+            onToggle={() => toggleSection('antecedents')}
+          >
             <Text style={styles.label}>Maladies chroniques</Text>
             <NullableField
               value={profile.chronicConditions ?? ''}
@@ -261,12 +410,29 @@ export default function MedicalProfileScreen({ route }: Props) {
             />
 
             <Text style={styles.label}>Notes comportementales</Text>
-            <NullableField
-              value={profile.behavioralNotes ?? ''}
-              onChange={(v) => setField('behavioralNotes', v)}
-              options={[]}
-              noneLabel={NONE_LABELS.behavioralNotes}
-            />
+            {behavioralNotes.map((n) => (
+              <View key={n.id} style={styles.noteRow}>
+                <Text style={styles.noteText}>{n.note}</Text>
+                <TouchableOpacity onPress={() => onDeleteNote(n)}>
+                  <Text style={styles.deleteLink}>Supprimer</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            {behavioralNotes.length === 0 && <Text style={styles.empty}>Aucune note pour l&apos;instant</Text>}
+            <View style={styles.noteAddRow}>
+              <TextInput
+                style={styles.noteInput}
+                placeholder="Ex : aime les gratouilles"
+                value={noteDraft}
+                onChangeText={setNoteDraft}
+              />
+              <PrimaryButton
+                title={savingNote ? '...' : 'Ajouter'}
+                onPress={onAddNote}
+                disabled={savingNote || !noteDraft.trim()}
+                style={styles.noteAddButton}
+              />
+            </View>
 
             <Text style={styles.label}>Groupe sanguin</Text>
             <NullableField
@@ -277,7 +443,12 @@ export default function MedicalProfileScreen({ route }: Props) {
             />
           </Accordion>
 
-          <Accordion title="Assurance" subtitle={insured ? String(profile.insuranceProvider) : 'Non renseigne'}>
+          <Accordion
+            title="Assurance"
+            subtitle={insured ? String(profile.insuranceProvider) : 'Non renseigne'}
+            open={openSection === 'assurance'}
+            onToggle={() => toggleSection('assurance')}
+          >
             <Text style={styles.label}>Assureur</Text>
             <NullableField
               value={profile.insuranceProvider ?? ''}
@@ -315,12 +486,17 @@ export default function MedicalProfileScreen({ route }: Props) {
             )}
           </Accordion>
 
-          <Accordion title="Veterinaire referent" subtitle={hasVet ? String(profile.referringVetName) : 'Non renseigne'}>
+          <Accordion
+            title="Veterinaire referent"
+            subtitle={hasVet ? String(profile.referringVetName) : 'Non renseigne'}
+            open={openSection === 'veterinaire'}
+            onToggle={() => toggleSection('veterinaire')}
+          >
             <Text style={styles.label}>Nom</Text>
             <NullableField
               value={profile.referringVetName ?? ''}
-              onChange={(v) => setField('referringVetName', v)}
-              options={[]}
+              onChange={onSelectVetName}
+              options={vetProviders.map((p) => p.name)}
               noneLabel={NONE_LABELS.referringVetName}
             />
             {hasVet && (
@@ -334,24 +510,38 @@ export default function MedicalProfileScreen({ route }: Props) {
                 />
               </>
             )}
+            <PrimaryButton
+              title="Ajouter un nouveau veterinaire"
+              variant="outline"
+              onPress={() => setVetModalVisible(true)}
+              style={styles.addVetButton}
+            />
           </Accordion>
 
           <Accordion
             title="Traitements en cours"
             subtitle={treatments.length > 0 ? `${treatments.length} en cours` : 'Aucun'}
+            open={openSection === 'traitements'}
+            onToggle={() => toggleSection('traitements')}
           >
             <View style={styles.accordionAddRow}>
               <AddIconButton onPress={() => setTreatmentModalVisible(true)} />
             </View>
             {treatments.map((t) => (
-              <View key={t.id} style={styles.listCard}>
+              <Card key={t.id} style={styles.listCard}>
                 <Text style={styles.listCardTitle}>{t.name}</Text>
                 {t.dosage && <Text style={styles.listCardSubtitle}>{t.dosage}</Text>}
+                {t.frequency && <Text style={styles.listCardSubtitle}>{t.frequency}</Text>}
+                {t.endDate ? (
+                  <Text style={styles.listCardSubtitle}>Jusqu&apos;au {t.endDate}</Text>
+                ) : (
+                  <Text style={styles.listCardSubtitle}>Traitement a vie</Text>
+                )}
                 {t.reminderTimes && <Text style={styles.listCardSubtitle}>Rappels : {t.reminderTimes}</Text>}
                 <TouchableOpacity onPress={() => onDeleteTreatment(t)}>
                   <Text style={styles.deleteLink}>Supprimer</Text>
                 </TouchableOpacity>
-              </View>
+              </Card>
             ))}
             {treatments.length === 0 && <Text style={styles.empty}>Aucun traitement en cours</Text>}
           </Accordion>
@@ -359,28 +549,36 @@ export default function MedicalProfileScreen({ route }: Props) {
           <Accordion
             title="Antecedents chirurgicaux"
             subtitle={surgicalHistory.length > 0 ? `${surgicalHistory.length} enregistre(s)` : 'Aucun'}
+            open={openSection === 'chirurgie'}
+            onToggle={() => toggleSection('chirurgie')}
           >
             <View style={styles.accordionAddRow}>
               <AddIconButton onPress={() => setSurgicalModalVisible(true)} />
             </View>
             {surgicalHistory.map((s) => (
-              <View key={s.id} style={styles.listCard}>
+              <Card key={s.id} style={styles.listCard}>
                 <Text style={styles.listCardTitle}>{s.procedureName}</Text>
-                {s.performedOn && <Text style={styles.listCardSubtitle}>{s.performedOn}</Text>}
+                <Text style={styles.listCardSubtitle}>{formatPartialDate(s)}</Text>
                 <TouchableOpacity onPress={() => onDeleteSurgicalHistory(s)}>
                   <Text style={styles.deleteLink}>Supprimer</Text>
                 </TouchableOpacity>
-              </View>
+              </Card>
             ))}
             {surgicalHistory.length === 0 && <Text style={styles.empty}>Aucun antecedent chirurgical</Text>}
           </Accordion>
-        </ScrollView>
+
+          <View style={styles.weightSection}>
+            <WeightCurveSection animalId={animalId} />
+          </View>
       </KeyboardAvoidingScreen>
 
       <AddModal
         visible={treatmentModalVisible}
         title="Ajouter un traitement"
-        onClose={() => setTreatmentModalVisible(false)}
+        onClose={() => {
+          setTreatmentModalVisible(false);
+          resetTreatmentForm();
+        }}
       >
         <AutocompleteInput
           value={treatmentName}
@@ -391,49 +589,65 @@ export default function MedicalProfileScreen({ route }: Props) {
         />
         <TextInput
           style={styles.input}
-          placeholder="Dosage / frequence"
+          placeholder="Dosage (ex : 1 comprime)"
           value={treatmentDosage}
           onChangeText={setTreatmentDosage}
         />
 
-        <Text style={styles.label}>Rappels de prise (optionnel)</Text>
+        <Text style={styles.label}>Frequence de prise</Text>
         <View style={styles.chipRow}>
-          {REMINDER_PRESETS.map((preset) => (
+          {FREQUENCY_PRESETS.map((preset) => (
             <TouchableOpacity
               key={preset.key}
-              style={[styles.chip, reminderPresets.has(preset.key) && styles.chipActive]}
-              onPress={() => toggleReminderPreset(preset.key)}
+              style={[styles.chip, frequencyPresets.has(preset.key) && styles.chipActive]}
+              onPress={() => toggleFrequencyPreset(preset.key)}
             >
-              <Text style={reminderPresets.has(preset.key) ? styles.chipTextActive : styles.chipText}>
+              <Text style={frequencyPresets.has(preset.key) ? styles.chipTextActive : styles.chipText}>
                 {preset.label} ({preset.time})
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-        {reminderPresets.size > 0 && (
-          <>
-            <Text style={styles.label}>Debut des rappels</Text>
-            <DatePickerInput value={reminderStartDate} onChange={setReminderStartDate} />
-            <Text style={styles.label}>Pendant combien de jours</Text>
+
+        <Text style={styles.label}>Depuis quand</Text>
+        <DatePickerInput value={treatmentStartDate} onChange={setTreatmentStartDate} />
+
+        <Text style={styles.label}>Duree du traitement</Text>
+        <View style={styles.durationRow}>
+          {durationUnit !== 'vie' && (
             <TextInput
-              style={styles.input}
-              placeholder="Ex: 7"
+              style={[styles.input, styles.durationValueInput]}
+              placeholder="Ex : 7"
               keyboardType="number-pad"
-              value={reminderDurationDays}
-              onChangeText={setReminderDurationDays}
+              value={durationValue}
+              onChangeText={setDurationValue}
             />
-          </>
+          )}
+          <View style={styles.durationUnitField}>
+            <Dropdown value={durationUnit} onChange={setDurationUnit} options={DURATION_UNIT_OPTIONS} placeholder="Unite" />
+          </View>
+        </View>
+
+        {durationUnit && durationUnit !== 'vie' && (
+          <View style={styles.switchRow}>
+            <Text style={styles.label}>Souhaites-tu des rappels de prise ?</Text>
+            <Switch value={remindersEnabled} onValueChange={setRemindersEnabled} disabled={frequencyPresets.size === 0} />
+          </View>
         )}
 
-        <TouchableOpacity style={styles.addButton} onPress={onAddTreatment}>
-          <Text style={styles.addButtonText}>Ajouter</Text>
-        </TouchableOpacity>
+        <PrimaryButton title="Ajouter" onPress={onAddTreatment} disabled={!treatmentName.trim()} />
       </AddModal>
 
       <AddModal
         visible={surgicalModalVisible}
         title="Ajouter un antecedent chirurgical"
-        onClose={() => setSurgicalModalVisible(false)}
+        onClose={() => {
+          setSurgicalModalVisible(false);
+          setProcedureName('');
+          setPerformedYear('');
+          setPerformedMonth('');
+          setPerformedDay('');
+        }}
       >
         <AutocompleteInput
           value={procedureName}
@@ -442,35 +656,131 @@ export default function MedicalProfileScreen({ route }: Props) {
           placeholder="Operation"
           autoFocus
         />
-        <DatePickerInput value={performedOn} onChange={setPerformedOn} placeholder="Date de l'operation" />
-        <TouchableOpacity style={styles.addButton} onPress={onAddSurgicalHistory}>
-          <Text style={styles.addButtonText}>Ajouter</Text>
-        </TouchableOpacity>
+        <Text style={styles.label}>Date (annee obligatoire, mois/jour si connus)</Text>
+        <View style={styles.dateRow}>
+          <TextInput
+            style={[styles.input, styles.dateYearInput]}
+            placeholder="Annee"
+            keyboardType="number-pad"
+            maxLength={4}
+            value={performedYear}
+            onChangeText={setPerformedYear}
+          />
+          <TextInput
+            style={[styles.input, styles.dateSmallInput]}
+            placeholder="Mois"
+            keyboardType="number-pad"
+            maxLength={2}
+            value={performedMonth}
+            onChangeText={setPerformedMonth}
+          />
+          <TextInput
+            style={[styles.input, styles.dateSmallInput]}
+            placeholder="Jour"
+            keyboardType="number-pad"
+            maxLength={2}
+            value={performedDay}
+            onChangeText={setPerformedDay}
+          />
+        </View>
+        <PrimaryButton title="Ajouter" onPress={onAddSurgicalHistory} disabled={!procedureName.trim() || !performedYear} />
+      </AddModal>
+
+      <AddModal
+        visible={vetModalVisible}
+        title="Ajouter un veterinaire"
+        onClose={() => {
+          setVetModalVisible(false);
+          setNewVetName('');
+          setNewVetPhone('');
+          setNewVetAddress('');
+        }}
+      >
+        <TextInput
+          style={styles.input}
+          placeholder="Nom du veterinaire"
+          value={newVetName}
+          onChangeText={setNewVetName}
+          autoFocus
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Telephone"
+          keyboardType="phone-pad"
+          value={newVetPhone}
+          onChangeText={setNewVetPhone}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Adresse"
+          value={newVetAddress}
+          onChangeText={setNewVetAddress}
+        />
+        <PrimaryButton
+          title={savingVet ? '...' : 'Ajouter'}
+          onPress={onAddVet}
+          disabled={savingVet || !newVetName.trim()}
+        />
       </AddModal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  saveStatusText: { color: '#A79A85', fontSize: 13 },
-  saveStatusTextOk: { color: '#B8863B', fontSize: 13, fontWeight: '600' },
-  saveStatusTextError: { color: '#B3452C', fontSize: 13, fontWeight: '600' },
-  label: { color: '#8A7B68', marginBottom: 4, marginTop: 8 },
-  input: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 8, padding: 12, marginBottom: 8, backgroundColor: '#EFE2C4', color: '#000000' },
-  accordionAddRow: { alignItems: 'flex-end', marginBottom: 8 },
-  listCard: { backgroundColor: 'white', borderRadius: 8, padding: 12, marginBottom: 8 },
+  container: { padding: spacing.lg },
+  weightSection: { marginTop: spacing.lg },
+  title: { ...typography.screenTitle, fontSize: 22 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
+  saveStatusText: { color: colors.textMuted, fontSize: 13 },
+  saveStatusTextOk: { color: colors.accent, fontSize: 13, fontWeight: '600' },
+  saveStatusTextError: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+  label: { color: colors.textSecondary, marginBottom: spacing.xs, marginTop: spacing.sm },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  accordionAddRow: { alignItems: 'flex-end', marginBottom: spacing.sm },
+  noteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  noteText: { color: colors.textPrimary, flexShrink: 1, marginRight: spacing.md },
+  noteAddRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, alignItems: 'center' },
+  noteInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    backgroundColor: colors.fieldBackground,
+    color: '#000000',
+  },
+  noteAddButton: { paddingHorizontal: spacing.lg },
+  addVetButton: { marginTop: spacing.md },
+  durationRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
+  durationValueInput: { flex: 1 },
+  durationUnitField: { flex: 2 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm, marginBottom: spacing.md },
+  dateRow: { flexDirection: 'row', gap: spacing.sm },
+  dateYearInput: { flex: 2 },
+  dateSmallInput: { flex: 1 },
+  listCard: { backgroundColor: colors.surface, marginBottom: spacing.sm, padding: spacing.md },
   listCardTitle: { fontWeight: '600' },
-  listCardSubtitle: { color: '#8A7B68', marginTop: 2 },
-  deleteLink: { color: '#B3452C', fontWeight: '600', marginTop: 6 },
-  empty: { color: '#8A7B68' },
-  addButton: { backgroundColor: '#B8863B', borderRadius: 8, padding: 14 },
-  addButtonText: { color: 'white', textAlign: 'center', fontWeight: '600' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  chip: { borderWidth: 1, borderColor: '#E3D8C4', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12 },
-  chipActive: { backgroundColor: '#B8863B', borderColor: '#B8863B' },
-  chipText: { color: '#3A3226' },
+  listCardSubtitle: { color: colors.textSecondary, marginTop: 2 },
+  deleteLink: { color: colors.danger, fontWeight: '600', marginTop: spacing.xs },
+  empty: { color: colors.textSecondary },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingVertical: 6, paddingHorizontal: spacing.md },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { color: colors.textPrimary },
   chipTextActive: { color: 'white', fontWeight: '600' },
 });
