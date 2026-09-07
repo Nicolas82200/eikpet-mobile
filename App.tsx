@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { TextInput } from 'react-native';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/auth/AuthContext';
 import { PurchasesProvider } from './src/subscriptions/PurchasesContext';
@@ -17,12 +18,14 @@ import { colors } from './src/theme/colors';
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <PurchasesProvider>
-          <RootNavigator />
-          <StatusBar style="auto" />
-        </PurchasesProvider>
-      </AuthProvider>
+      <KeyboardProvider>
+        <AuthProvider>
+          <PurchasesProvider>
+            <RootNavigator />
+            <StatusBar style="auto" />
+          </PurchasesProvider>
+        </AuthProvider>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }

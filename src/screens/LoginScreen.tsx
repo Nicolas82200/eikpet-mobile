@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
@@ -30,8 +30,7 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingScreen>
-      <View style={styles.container}>
+    <KeyboardAvoidingScreen contentContainerStyle={styles.container}>
       <Image source={require('../../assets/eikpet-logo-accent.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.subtitle}>La santé de tes animaux, centralisée</Text>
       <TextInput
@@ -63,13 +62,12 @@ export default function LoginScreen({ navigation }: Props) {
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
         <Text style={styles.link}>Pas encore de compte ? Creer un compte</Text>
       </TouchableOpacity>
-      </View>
     </KeyboardAvoidingScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: spacing.xl },
+  container: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl },
   logo: { width: 160, height: 160, alignSelf: 'center' },
   subtitle: { textAlign: 'center', color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.xxl },
   input: {
