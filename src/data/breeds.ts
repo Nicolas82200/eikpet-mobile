@@ -1,6 +1,8 @@
 // Listes statiques (pas d'API fiable et gratuite couvrant chien/chat/cheval a la fois).
 // "Autre" reste toujours disponible en saisie libre dans le picker.
 
+import { normalizeSpecies } from '../utils/species';
+
 const DOG_BREEDS = [
   'Berger Allemand',
   'Berger Belge Malinois',
@@ -89,6 +91,21 @@ const DOG_BREEDS = [
   'Pitbull (American Pit Bull Terrier)',
   'Bichon Havanais',
   'Coton de Tulear',
+  'Shar Pei',
+  'Berger Picard',
+  'Braque Saint-Germain',
+  'Epagneul Français',
+  'Griffon Korthals',
+  'Barbet',
+  'Chien d\'Eau Portugais',
+  'Terrier Tibetain',
+  'Grand Bleu de Gascogne',
+  'Basset Bleu de Gascogne',
+  'Griffon Bruxellois',
+  'Xoloitzcuintle',
+  'American Bully',
+  'Berger Australien Miniature',
+  'Dogue Argentin',
 ] as const;
 
 const CAT_BREEDS = [
@@ -138,6 +155,11 @@ const CAT_BREEDS = [
   'American Shorthair',
   'American Wirehair',
   'Chausie',
+  'Kurilian Bobtail',
+  'Pixie-bob',
+  'Bobtail Japonais',
+  'Serengeti',
+  'York Chocolat',
 ] as const;
 
 const HORSE_BREEDS = [
@@ -189,14 +211,50 @@ const HORSE_BREEDS = [
   'Konik Polski',
   'Criollo',
   'Akhal-Teke',
+  'Barbe',
+  'Merens',
+  'Curly Horse',
+  'Falabella',
+  'Mangalarga',
+] as const;
+
+// NAC (Nouveaux Animaux de Compagnie) : races reconnues surtout chez le lapin et le cochon d'Inde.
+const RABBIT_BREEDS = [
+  'Belier Francais',
+  'Belier Anglais',
+  'Nain de Couleur',
+  'Nain Angora',
+  'Angora Francais',
+  'Rex',
+  'Fauve de Bourgogne',
+  'Geant des Flandres',
+  'Papillon Francais',
+  'Polonais',
+  'Hollandais',
+  'Lionhead',
+] as const;
+
+const GUINEA_PIG_BREEDS = [
+  'Americain (poil court)',
+  'Abyssin',
+  'Peruvien',
+  'Rex',
+  'Skinny (sans poil)',
+  'Texel',
+  'Coronet',
+  'Sheltie',
 ] as const;
 
 const BREEDS_BY_SPECIES: Record<string, readonly string[]> = {
-  Chien: DOG_BREEDS,
-  Chat: CAT_BREEDS,
-  Cheval: HORSE_BREEDS,
+  chien: DOG_BREEDS,
+  chat: CAT_BREEDS,
+  cheval: HORSE_BREEDS,
+  poney: HORSE_BREEDS,
+  lapin: RABBIT_BREEDS,
+  'cochon d\'inde': GUINEA_PIG_BREEDS,
+  cobaye: GUINEA_PIG_BREEDS,
 };
 
 export function getBreedsForSpecies(species: string): readonly string[] {
-  return BREEDS_BY_SPECIES[species] ?? [];
+  return BREEDS_BY_SPECIES[normalizeSpecies(species)] ?? [];
 }
