@@ -1,6 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../navigation/types';
 import * as api from '../api/endpoints';
 import type { WeightEntry } from '../types/api';
 import AddIconButton from './AddIconButton';
@@ -8,7 +10,7 @@ import AddModal from './AddModal';
 import Card from './Card';
 import DatePickerInput from './DatePickerInput';
 import PrimaryButton from './PrimaryButton';
-import { showError, showLoadError } from '../utils/errorHandling';
+import { isPlanLimitError, showError, showLoadError } from '../utils/errorHandling';
 import { colors, radius, spacing, typography } from '../theme/colors';
 
 const CHART_HEIGHT = 120;
@@ -20,11 +22,13 @@ function formatDate(date: string): string {
 
 interface Props {
   animalId: number;
+  navigation: NativeStackNavigationProp<AppStackParamList>;
 }
 
 /** Courbe de poids integree a la fiche medicale (plus d'ecran dedie separe). */
-export default function WeightCurveSection({ animalId }: Props) {
+export default function WeightCurveSection({ animalId, navigation }: Props) {
   const [entries, setEntries] = useState<WeightEntry[]>([]);
+  const [locked, setLocked] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [weightKg, setWeightKg] = useState('');
   const [recordedDate, setRecordedDate] = useState('');
@@ -32,7 +36,19 @@ export default function WeightCurveSection({ animalId }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(() => {
-    api.listWeightEntries(animalId).then(setEntries).catch(showLoadError);
+    api
+      .listWeightEntries(animalId)
+      .then((result) => {
+        setLocked(false);
+        setEntries(result);
+      })
+      .catch((error) => {
+        if (isPlanLimitError(error)) {
+          setLocked(true);
+        } else {
+          showLoadError(error);
+        }
+      });
   }, [animalId]);
 
   useFocusEffect(load);
@@ -86,6 +102,20 @@ export default function WeightCurveSection({ animalId }: Props) {
   const maxWeight = weights.length ? Math.max(...weights) : 0;
   const range = maxWeight - minWeight || 1;
   const descEntries = [...entries].reverse();
+
+  if (locked) {
+    return (
+      <>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Courbe de poids</Text>
+        </View>
+        <Card style={styles.lockedCard}>
+          <Text style={styles.lockedText}>La courbe de poids n&apos;est disponible qu&apos;avec l&apos;abonnement.</Text>
+          <PrimaryButton title="Passer en mode premium" onPress={() => navigation.navigate('Paywall')} />
+        </Card>
+      </>
+    );
+  }
 
   return (
     <>
@@ -165,6 +195,8 @@ export default function WeightCurveSection({ animalId }: Props) {
 
 const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  lockedCard: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.lg },
+  lockedText: { color: colors.textSecondary, textAlign: 'center' },
   title: { ...typography.sectionTitle, fontSize: 18 },
   chartCard: { paddingVertical: spacing.md, paddingHorizontal: spacing.sm },
   chartRow: { alignItems: 'flex-end', paddingHorizontal: spacing.sm },
