@@ -64,7 +64,7 @@ function todayIsoDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-export default function MedicalProfileScreen({ route }: Props) {
+export default function MedicalProfileScreen({ route, navigation }: Props) {
   const { animalId, animalName, species, householdId } = route.params;
   const [profile, setProfile] = useState<Partial<MedicalProfile>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -568,7 +568,7 @@ export default function MedicalProfileScreen({ route }: Props) {
           </Accordion>
 
           <View style={styles.weightSection}>
-            <WeightCurveSection animalId={animalId} />
+            <WeightCurveSection animalId={animalId} navigation={navigation} />
           </View>
       </KeyboardAvoidingScreen>
 

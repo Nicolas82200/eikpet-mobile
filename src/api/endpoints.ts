@@ -197,8 +197,14 @@ export function getMedicalProfile(animalId: number): Promise<MedicalProfile | nu
   return apiRequest(`/animals/${animalId}/medical-profile`);
 }
 
-export function upsertMedicalProfile(animalId: number, input: Partial<MedicalProfile>): Promise<MedicalProfile> {
-  return apiRequest(`/animals/${animalId}/medical-profile`, { method: 'PUT', body: input });
+export function upsertMedicalProfile(
+  animalId: number,
+  input: Partial<MedicalProfile>,
+): Promise<MedicalProfile> {
+  // Le state local part de la reponse GET (qui inclut animalId) : on le retire avant
+  // de renvoyer l'objet, le DTO backend ne l'accepte pas (c'est deja dans l'URL).
+  const { animalId: _animalId, ...body } = input;
+  return apiRequest(`/animals/${animalId}/medical-profile`, { method: 'PUT', body });
 }
 
 export function listTreatments(animalId: number): Promise<Treatment[]> {
