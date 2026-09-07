@@ -1,16 +1,10 @@
 import React from 'react';
 import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 /**
- * Evite que le clavier ne recouvre les champs de saisie places en bas de l'ecran
- * (formulaires sous une liste : foyers, animaux, carnet de sante...).
- *
- * Sur Android, la fenetre est deja redimensionnee automatiquement par l'OS quand le
- * clavier s'ouvre (windowSoftInputMode "resize", cf. app.json > android) : ce
- * redimensionnement seul ne scrolle pas jusqu'au champ actif, donc un champ bas d'ecran
- * reste caché sans moyen de scroller pour le voir. KeyboardAwareScrollView ecoute le
- * focus des champs et scrolle la vue jusqu'à eux, en plus de gerer le "padding" iOS.
+ * Evite que le clavier ne recouvre le champ en cours de saisie. Composant natif (pas de
+ * bricolage JS/mesures manuelles) : comportement identique aux autres apps sur iOS et Android.
  */
 export default function KeyboardAvoidingScreen({
   children,
@@ -24,9 +18,7 @@ export default function KeyboardAvoidingScreen({
       style={styles.flex}
       contentContainerStyle={contentContainerStyle}
       keyboardShouldPersistTaps="handled"
-      enableOnAndroid
-      enableAutomaticScroll
-      extraScrollHeight={20}
+      bottomOffset={20}
     >
       {children}
     </KeyboardAwareScrollView>

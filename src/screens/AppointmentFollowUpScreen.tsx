@@ -63,7 +63,7 @@ export default function AppointmentFollowUpScreen({ route, navigation }: Props) 
 
   return (
     <KeyboardAvoidingScreen contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Suivi du rendez-vous — {animal.name}</Text>
+      <Text style={styles.title}>Suivi du rendez-vous — {animal.name}</Text>
         {entry && (
           <Text style={styles.subtitle}>
             {entry.customTypeLabel ?? getHealthEntryTypeLabel(entry.type)} — {entry.scheduledDate}
